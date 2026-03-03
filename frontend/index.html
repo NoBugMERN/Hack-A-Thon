@@ -1,0 +1,2143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GapSync — AI Career Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;1,300&family=Fraunces:ital,opsz,wght@1,9..144,300;1,9..144,400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<!-- Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --black:#07070f;--bg:#0b0b18;--surface:#10101f;--card:#111125;--card2:#16162e;
+  --border:rgba(255,255,255,.07);--border-hi:rgba(255,255,255,.13);
+  --purple:#7c5cfc;--purple-b:#a080ff;--purple-dim:rgba(124,92,252,.15);
+  --green:#39ff8a;--amber:#ffb547;--red:#ff4f6a;--blue:#4fc3f7;
+  --text:#eeeef5;--muted:#55556e;--muted2:#8888aa;
+  --font:'Syne',sans-serif;--mono:'DM Mono',monospace;--serif:'Fraunces',serif;
+  --r:14px;
+}
+html,body{height:100%;scroll-behavior:smooth}
+body{font-family:var(--font);background:var(--black);color:var(--text);overflow-x:hidden}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(124,92,252,.4);border-radius:2px}
+::placeholder{color:var(--muted)}
+input,select,textarea,button{font-family:inherit}
+a{text-decoration:none;color:inherit}
+
+/* ── VIEWS ── */
+.view{display:none;min-height:100vh}
+.view.active{display:block}
+#v-landing.active{display:flex;flex-direction:column}
+#v-admin.active{display:flex}
+
+/* ── CUSTOM CURSOR ── */
+#cursor{position:fixed;width:12px;height:12px;border-radius:50%;background:var(--purple);pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:width .2s,height .2s,background .2s;mix-blend-mode:screen}
+#cursor-ring{position:fixed;width:36px;height:36px;border-radius:50%;border:1px solid rgba(124,92,252,.4);pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:transform .08s ease,width .3s,height .3s,border-color .3s}
+body:hover #cursor{opacity:1}
+
+/* ── NOISE TEXTURE ── */
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:1000;opacity:.4}
+
+/* ── ATOMS ── */
+.logo-mark{display:flex;align-items:center;gap:9px;font-size:17px;font-weight:800;letter-spacing:-.02em;color:var(--text)}
+.logo-dot{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 16px var(--green),0 0 32px rgba(57,255,138,.3);animation:pulse-dot 3s ease-in-out infinite}
+@keyframes pulse-dot{0%,100%{box-shadow:0 0 16px var(--green),0 0 32px rgba(57,255,138,.3)}50%{box-shadow:0 0 24px var(--green),0 0 48px rgba(57,255,138,.5)}}
+.mono-tag{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;padding:5px 12px;border-radius:100px;display:inline-flex;align-items:center}
+.green-tag{background:rgba(57,255,138,.1);color:var(--green);border:1px solid rgba(57,255,138,.25)}
+.purple-tag{background:var(--purple-dim);color:var(--purple-b);border:1px solid rgba(124,92,252,.3)}
+.btn{border:none;cursor:pointer;transition:all .22s;font-family:var(--mono);font-size:12px;letter-spacing:.07em;display:inline-flex;align-items:center;gap:8px;border-radius:10px;padding:13px 24px;font-weight:600;position:relative;overflow:hidden}
+.btn::after{content:'';position:absolute;inset:0;background:rgba(255,255,255,0);transition:background .2s}
+.btn:hover::after{background:rgba(255,255,255,.05)}
+.btn-primary{background:var(--purple);color:#fff}.btn-primary:hover{background:var(--purple-b);transform:translateY(-2px);box-shadow:0 12px 36px rgba(124,92,252,.5)}
+.btn-green{background:linear-gradient(135deg,#1a8f52,var(--green));color:#06120d}.btn-green:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(57,255,138,.35)}
+.btn-ghost{background:transparent;color:var(--text);border:1px solid var(--border)}.btn-ghost:hover{border-color:var(--border-hi);background:rgba(255,255,255,.04)}
+.btn-full{width:100%;justify-content:center;padding:15px}
+.field{display:flex;flex-direction:column;gap:7px;margin-bottom:15px}
+.field label{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted2)}
+.field input,.field select,.field textarea,.finput{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:10px;padding:13px 15px;font-family:var(--mono);font-size:13px;color:var(--text);outline:none;transition:all .25s}
+.field input:focus,.field select:focus,.field textarea:focus,.finput:focus{border-color:rgba(124,92,252,.5);background:rgba(124,92,252,.05);box-shadow:0 0 0 3px rgba(124,92,252,.1)}
+.field textarea{resize:vertical;min-height:90px}
+.field select{appearance:none;cursor:pointer}
+.err-box{font-family:var(--mono);font-size:11px;color:var(--red);padding:10px 14px;background:rgba(255,79,106,.08);border:1px solid rgba(255,79,106,.2);border-radius:8px;margin-bottom:14px;display:none}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.panel-hdr{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--border)}
+.panel-title{font-size:14px;font-weight:700;letter-spacing:-.02em}
+.panel-sub{font-family:var(--mono);font-size:11px;color:var(--muted2);margin-top:2px}
+.panel-body{padding:22px}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fade-up{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+@keyframes slide-in-left{from{opacity:0;transform:translateX(-40px)}to{opacity:1;transform:none}}
+@keyframes slide-in-right{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:none}}
+@keyframes scale-in{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+@keyframes glow-pulse{0%,100%{box-shadow:0 0 20px rgba(124,92,252,.3)}50%{box-shadow:0 0 40px rgba(124,92,252,.6),0 0 80px rgba(124,92,252,.2)}}
+
+/* ── REVEAL SYSTEM ── */
+.reveal{opacity:0;transform:translateY(40px);transition:opacity .8s cubic-bezier(.22,1,.36,1),transform .8s cubic-bezier(.22,1,.36,1)}
+.reveal.left{transform:translateX(-40px)}
+.reveal.right{transform:translateX(40px)}
+.reveal.scale{transform:scale(.92)}
+.reveal.visible{opacity:1;transform:none}
+.rd1{transition-delay:.12s}.rd2{transition-delay:.24s}.rd3{transition-delay:.36s}.rd4{transition-delay:.48s}
+
+/* ═══════════════════════════════════════════════════════
+   PROGRESS BAR
+═══════════════════════════════════════════════════════ */
+#scroll-progress{position:fixed;top:0;left:0;height:2px;background:linear-gradient(90deg,var(--purple),var(--green));z-index:9997;transition:width .1s;width:0%}
+
+/* ═══════════════════════════════════════════════════════
+   VIEW 1 — LANDING
+═══════════════════════════════════════════════════════ */
+#v-landing{
+  background:var(--black);
+  background-image:
+    radial-gradient(ellipse 90% 60% at 50% -5%,rgba(124,92,252,.22),transparent),
+    radial-gradient(ellipse 50% 50% at 10% 80%,rgba(57,255,138,.07),transparent),
+    radial-gradient(ellipse 40% 40% at 90% 70%,rgba(255,79,106,.05),transparent);
+}
+.land-grid{position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);
+  background-size:64px 64px;mask-image:radial-gradient(ellipse 100% 100% at 50% 50%,black 0%,transparent 80%)}
+.land-nav{position:relative;z-index:5;display:flex;align-items:center;justify-content:space-between;padding:24px 52px}
+.land-main{position:relative;z-index:5;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px 60px}
+.land-eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.22em;color:var(--green);text-transform:uppercase;margin-bottom:22px;display:flex;align-items:center;justify-content:center;gap:12px;animation:fade-up .6s ease .1s both}
+.land-eyebrow::before,.land-eyebrow::after{content:'';width:32px;height:1px;background:currentColor;opacity:.4}
+.land-h1{font-size:clamp(40px,5.5vw,68px);font-weight:800;letter-spacing:-.04em;line-height:.93;margin-bottom:20px;text-align:center;animation:fade-up .6s ease .25s both}
+.land-h1 em{font-family:var(--serif);font-style:italic;font-weight:300;color:var(--purple-b)}
+.land-p{font-family:var(--mono);font-size:13px;color:var(--muted2);line-height:1.85;max-width:460px;text-align:center;margin-bottom:52px;animation:fade-up .6s ease .4s both}
+.role-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;width:100%;max-width:800px;animation:fade-up .6s ease .55s both}
+.role-card{background:var(--card);border:1px solid var(--border);border-radius:22px;padding:36px;cursor:pointer;transition:transform .3s cubic-bezier(.22,1,.36,1),box-shadow .3s,border-color .3s;position:relative;overflow:hidden;color:inherit;display:block}
+.role-card::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity .4s}
+.role-card::after{content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.04),transparent);transition:left .5s ease;pointer-events:none}
+.role-card:hover{transform:translateY(-6px) scale(1.01)}
+.role-card:hover::after{left:150%}
+.role-card.student{border-color:rgba(57,255,138,.15)}.role-card.student::before{background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(57,255,138,.09),transparent)}
+.role-card.student:hover{border-color:rgba(57,255,138,.4);box-shadow:0 24px 64px rgba(57,255,138,.12)}.role-card.student:hover::before{opacity:1}
+.role-card.admin{border-color:rgba(124,92,252,.2)}.role-card.admin::before{background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(124,92,252,.12),transparent)}
+.role-card.admin:hover{border-color:rgba(124,92,252,.5);box-shadow:0 24px 64px rgba(124,92,252,.18)}.role-card.admin:hover::before{opacity:1}
+.rc-inner{position:relative;z-index:1}
+.rc-icon{width:52px;height:52px;border-radius:15px;display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:22px;transition:transform .3s}
+.role-card:hover .rc-icon{transform:scale(1.1) rotate(-5deg)}
+.student .rc-icon{background:rgba(57,255,138,.1);border:1px solid rgba(57,255,138,.2)}
+.admin .rc-icon{background:var(--purple-dim);border:1px solid rgba(124,92,252,.25)}
+.rc-badge{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;padding:4px 11px;border-radius:100px;display:inline-block;margin-bottom:14px}
+.student .rc-badge{background:rgba(57,255,138,.1);color:var(--green);border:1px solid rgba(57,255,138,.2)}
+.admin .rc-badge{background:var(--purple-dim);color:var(--purple-b);border:1px solid rgba(124,92,252,.25)}
+.rc-title{font-size:22px;font-weight:800;letter-spacing:-.03em;margin-bottom:10px}
+.rc-desc{font-family:var(--mono);font-size:12px;color:var(--muted2);line-height:1.85;margin-bottom:24px}
+.rc-feats{list-style:none;display:flex;flex-direction:column;gap:8px;margin-bottom:28px}
+.rc-feats li{font-family:var(--mono);font-size:11px;color:var(--muted2);display:flex;align-items:center;gap:8px;transition:color .2s}
+.rc-feats li::before{content:'→';flex-shrink:0;transition:transform .2s}
+.role-card:hover .rc-feats li::before{transform:translateX(3px)}
+.student .rc-feats li::before{color:var(--green)}.admin .rc-feats li::before{color:var(--purple-b)}
+.rc-cta{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-radius:12px;font-size:13px;font-weight:700;transition:all .25s}
+.student .rc-cta{background:rgba(57,255,138,.1);color:var(--green);border:1px solid rgba(57,255,138,.2)}
+.student:hover .rc-cta{background:rgba(57,255,138,.2);border-color:rgba(57,255,138,.35)}
+.admin .rc-cta{background:var(--purple-dim);color:var(--purple-b);border:1px solid rgba(124,92,252,.25)}
+.admin:hover .rc-cta{background:rgba(124,92,252,.25);border-color:rgba(124,92,252,.4)}
+.rc-arrow{transition:transform .25s}.role-card:hover .rc-arrow{transform:translateX(6px)}
+.land-badges{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:36px;animation:fade-up .6s ease .7s both}
+.land-badge{font-family:var(--mono);font-size:10px;letter-spacing:.05em;padding:7px 14px;border-radius:100px;background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--muted2);transition:all .2s}
+.land-badge:hover{border-color:var(--border-hi);color:var(--text)}
+
+/* ═══════════════════════════════════════════════════════
+   MODAL
+═══════════════════════════════════════════════════════ */
+.modal-overlay{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.75);backdrop-filter:blur(16px);display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex;animation:fade-up .2s ease}
+.modal{width:100%;max-width:440px;background:var(--card);border:1px solid var(--border-hi);border-radius:24px;position:relative;overflow:hidden;animation:scale-in .3s cubic-bezier(.34,1.56,.64,1) both}
+.modal-stripe{height:3px}
+.modal-stripe.s{background:linear-gradient(90deg,var(--green),rgba(57,255,138,.3))}
+.modal-stripe.a{background:linear-gradient(90deg,var(--purple),var(--purple-b))}
+.modal-body{padding:36px}
+.modal-close{position:absolute;top:16px;right:16px;width:30px;height:30px;border-radius:9px;background:rgba(255,255,255,.06);border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--muted2);transition:all .15s;z-index:2}
+.modal-close:hover{background:rgba(255,79,106,.12);color:var(--red);border-color:rgba(255,79,106,.3)}
+.modal-icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:20px}
+.modal-icon.s{background:rgba(57,255,138,.1);border:1px solid rgba(57,255,138,.2)}
+.modal-icon.a{background:var(--purple-dim);border:1px solid rgba(124,92,252,.25)}
+.modal-title{font-size:22px;font-weight:800;letter-spacing:-.03em;margin-bottom:6px}
+.modal-sub{font-family:var(--mono);font-size:12px;color:var(--muted2);line-height:1.75;margin-bottom:28px}
+.modal-sub .hl{color:var(--green)}.modal-sub .hlp{color:var(--purple-b)}
+.modal-tabs{display:flex;background:rgba(255,255,255,.04);border-radius:10px;padding:3px;margin-bottom:22px;gap:3px}
+.mtab{flex:1;padding:9px;text-align:center;font-family:var(--mono);font-size:11px;letter-spacing:.06em;cursor:pointer;border-radius:7px;color:var(--muted2);transition:all .2s;font-weight:600}
+.mtab.active{background:var(--card2);color:var(--text);box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.modal-hint{font-family:var(--mono);font-size:10px;color:var(--muted);text-align:center;margin-top:14px;line-height:1.7}
+.modal-hint strong{color:var(--muted2);font-weight:400}
+.modal-divider{height:1px;background:var(--border);margin:18px 0}
+.modal-switch{font-family:var(--mono);font-size:11px;color:var(--muted2);text-align:center;cursor:pointer;transition:color .2s}
+.modal-switch:hover{color:var(--purple-b)}
+.form-pane{display:none}.form-pane.active{display:block}
+.db-status{font-family:var(--mono);font-size:10px;text-align:center;margin-top:10px;padding:8px;border-radius:7px}
+.db-status.ok{background:rgba(57,255,138,.07);color:var(--green);border:1px solid rgba(57,255,138,.15)}
+.db-status.err{background:rgba(255,79,106,.07);color:var(--red);border:1px solid rgba(255,79,106,.15)}
+
+/* ═══════════════════════════════════════════════════════
+   VIEW 2 — STUDENT APP
+   KEY FIX: No scroll-snap. Normal scroll. Form section auto-height.
+═══════════════════════════════════════════════════════ */
+#v-student{background:var(--black);overflow-y:auto;height:100vh}
+
+.app-nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:16px 44px;transition:all .4s}
+.app-nav.scrolled{backdrop-filter:blur(24px);background:rgba(7,7,15,.88);border-bottom:1px solid rgba(255,255,255,.05)}
+.nav-right{display:flex;align-items:center;gap:12px}
+.nav-user-pill{font-family:var(--mono);font-size:11px;color:var(--muted2);display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);border:1px solid var(--border);padding:6px 14px;border-radius:100px}
+.nav-avatar{width:22px;height:22px;border-radius:50%;background:rgba(57,255,138,.15);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--green)}
+.nav-links{display:flex;align-items:center;gap:4px}
+.nav-link-btn{font-family:var(--mono);font-size:11px;color:var(--muted2);padding:7px 14px;border-radius:8px;cursor:pointer;transition:all .2s;background:none;border:none}
+.nav-link-btn:hover{color:var(--text);background:rgba(255,255,255,.05)}
+.nav-signout{font-family:var(--mono);font-size:11px;color:var(--muted);border:1px solid var(--border);padding:7px 13px;border-radius:8px;cursor:pointer;transition:all .2s;background:none}
+.nav-signout:hover{color:var(--red);border-color:rgba(255,79,106,.3)}
+
+/* HERO — full viewport */
+.hero-sec{min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.hero-bg-grad{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(124,92,252,.2),transparent 70%),radial-gradient(ellipse 40% 40% at 80% 60%,rgba(57,255,138,.07),transparent 60%)}
+.hero-grid-lines{position:absolute;inset:0;pointer-events:none;
+  background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);
+  background-size:80px 80px;mask-image:radial-gradient(ellipse 100% 80% at 50% 50%,black 30%,transparent 80%)}
+.orb{position:absolute;border-radius:50%;pointer-events:none;filter:blur(90px);opacity:.14}
+.o1{width:600px;height:600px;background:var(--purple);top:-120px;left:-120px;animation:orb1 10s ease-in-out infinite}
+.o2{width:500px;height:500px;background:var(--green);bottom:-100px;right:-100px;animation:orb2 12s ease-in-out infinite}
+.o3{width:300px;height:300px;background:var(--amber);top:40%;left:40%;animation:orb3 8s ease-in-out infinite;opacity:.08}
+@keyframes orb1{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(40px,-30px) scale(1.05)}66%{transform:translate(-20px,40px) scale(.95)}}
+@keyframes orb2{0%,100%{transform:translate(0,0)}40%{transform:translate(-30px,-20px)}70%{transform:translate(20px,30px)}}
+@keyframes orb3{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.3)}}
+.hero-content{position:relative;z-index:2;text-align:center;max-width:920px;padding:0 24px}
+.h-eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.22em;color:var(--green);text-transform:uppercase;margin-bottom:28px;display:flex;align-items:center;justify-content:center;gap:12px;opacity:0;animation:fade-up .8s ease .2s forwards}
+.h-eyebrow::before,.h-eyebrow::after{content:'';width:36px;height:1px;background:currentColor;opacity:.4}
+.hero-h1{font-size:clamp(54px,9vw,112px);font-weight:800;letter-spacing:-.045em;line-height:.9;margin-bottom:24px;opacity:0;animation:fade-up .8s ease .4s forwards}
+.hero-h1 .l1{display:block}
+.hero-h1 .l2{display:block;font-family:var(--serif);font-style:italic;font-weight:300;color:var(--purple-b);font-size:1.06em;animation:glow-sweep 4s ease-in-out 2s infinite}
+@keyframes glow-sweep{0%,100%{text-shadow:none}50%{text-shadow:0 0 40px rgba(160,128,255,.4)}}
+.hero-sub{font-family:var(--mono);font-size:14px;line-height:1.95;color:var(--muted2);max-width:520px;margin:0 auto 48px;opacity:0;animation:fade-up .8s ease .6s forwards}
+.hero-btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;opacity:0;animation:fade-up .8s ease .8s forwards}
+.hero-stats{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;margin-top:60px;opacity:0;animation:fade-up .8s ease 1s forwards}
+.stat-p{font-family:var(--mono);font-size:10px;letter-spacing:.06em;padding:8px 15px;border-radius:100px;background:rgba(255,255,255,.05);border:1px solid var(--border);color:var(--muted2);transition:all .3s;cursor:default}
+.stat-p:hover{border-color:rgba(124,92,252,.3);color:var(--text)}
+.stat-p strong{color:var(--text);font-weight:400}
+.scroll-cue{position:absolute;bottom:30px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;display:flex;flex-direction:column;align-items:center;gap:7px;opacity:0;animation:fade-up .8s ease 1.4s forwards}
+.scroll-cue-line{width:1px;height:48px;background:linear-gradient(to bottom,var(--purple),transparent);animation:line-grow 1.5s ease-in-out 2s infinite}
+@keyframes line-grow{0%{height:0;opacity:1}100%{height:48px;opacity:0}}
+
+/* FORM SECTION — auto height, NO snap */
+.form-sec{
+  background:var(--bg);
+  padding:120px 44px 80px;
+  display:flex;align-items:flex-start;justify-content:center;
+  position:relative;overflow:hidden;
+}
+.form-sec::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 40% at 50% 0%,rgba(124,92,252,.08),transparent)}
+.form-inner{max-width:880px;width:100%;position:relative;z-index:1}
+.sec-label{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--purple-b);margin-bottom:14px}
+.sec-h2{font-size:clamp(32px,4vw,52px);font-weight:800;letter-spacing:-.03em;line-height:1.02;margin-bottom:10px}
+.sec-h2 em{font-family:var(--serif);font-style:italic;font-weight:300;color:var(--purple-b)}
+.sec-sub{font-family:var(--mono);font-size:13px;color:var(--muted2);margin-bottom:44px;line-height:1.8}
+.form-card{background:var(--card);border:1px solid var(--border);border-radius:24px;padding:44px;position:relative;overflow:hidden;transition:border-color .3s,box-shadow .3s}
+.form-card:focus-within{border-color:rgba(124,92,252,.25);box-shadow:0 0 0 1px rgba(124,92,252,.1),0 24px 64px rgba(0,0,0,.4)}
+.form-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--purple),var(--green),transparent)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
+.fg{display:flex;flex-direction:column;gap:8px}
+.fg.full{grid-column:1/-1}
+.fg label{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted2)}
+.fg input,.fg select,.fg textarea{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:11px;padding:13px 15px;font-family:var(--mono);font-size:13px;color:var(--text);outline:none;transition:all .25s;width:100%}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:rgba(124,92,252,.5);background:rgba(124,92,252,.05);box-shadow:0 0 0 3px rgba(124,92,252,.1)}
+.fg textarea{resize:vertical;min-height:96px}
+.fg select{appearance:none;cursor:pointer}
+.skills-tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px;min-height:18px}
+.skill-tag{font-family:var(--mono);font-size:11px;padding:5px 13px;border-radius:100px;background:rgba(124,92,252,.14);border:1px solid rgba(124,92,252,.28);color:var(--purple-b);cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:5px;animation:scale-in .2s ease}
+.skill-tag:hover{background:rgba(255,79,106,.12);border-color:rgba(255,79,106,.28);color:var(--red);transform:scale(1.05)}
+
+/* GitHub box */
+.gh-box{grid-column:1/-1;background:rgba(255,255,255,.025);border:1px solid var(--border);border-radius:16px;padding:24px;transition:all .3s}
+.gh-box:focus-within{border-color:rgba(57,255,138,.3);background:rgba(57,255,138,.03);box-shadow:0 0 0 1px rgba(57,255,138,.08)}
+.gh-hdr{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.gh-ico{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.07);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.gh-ttl{font-size:14px;font-weight:700}.gh-stl{font-family:var(--mono);font-size:11px;color:var(--muted2);margin-top:2px}
+.gh-opt{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--green);border:1px solid rgba(57,255,138,.25);background:rgba(57,255,138,.08);padding:3px 9px;border-radius:100px;margin-left:auto;white-space:nowrap}
+.gh-row{display:flex;gap:9px;margin-top:12px}
+.gh-inp{flex:1;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-family:var(--mono);font-size:13px;color:var(--text);outline:none;transition:all .25s}
+.gh-inp:focus{border-color:rgba(57,255,138,.4);background:rgba(57,255,138,.04);box-shadow:0 0 0 3px rgba(57,255,138,.08)}
+.gh-btn{background:rgba(57,255,138,.12);border:1px solid rgba(57,255,138,.28);color:var(--green);font-family:var(--mono);font-size:11px;letter-spacing:.06em;padding:12px 20px;border-radius:10px;cursor:pointer;transition:all .2s;white-space:nowrap;flex-shrink:0}
+.gh-btn:hover{background:rgba(57,255,138,.22);transform:translateY(-1px)}.gh-btn:disabled{opacity:.4;cursor:not-allowed}
+.gh-loading{display:none;align-items:center;gap:10px;margin-top:13px;font-family:var(--mono);font-size:12px;color:var(--muted2)}
+.gh-loading.show{display:flex}
+.spinner{width:15px;height:15px;border:2px solid rgba(57,255,138,.2);border-top-color:var(--green);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+.p-steps{display:flex;flex-direction:column;gap:3px;margin-top:5px}
+.p-step{font-family:var(--mono);font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;transition:color .3s}
+.p-step::before{content:'○';font-size:10px}
+.p-step.done{color:var(--green)}.p-step.done::before{content:'✓'}
+.p-step.act{color:var(--text)}.p-step.act::before{content:'◉';color:var(--purple-b)}
+.gh-result{display:none;margin-top:14px;background:rgba(57,255,138,.04);border:1px solid rgba(57,255,138,.15);border-radius:12px;padding:18px;animation:fade-up .4s ease}
+.gh-result.show{display:block}
+.gh-r-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px}
+.gh-r-title{font-size:13px;font-weight:700;display:flex;align-items:center;gap:7px}
+.gh-r-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green)}
+.gh-stats-g{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:13px}
+.gh-stat{background:rgba(255,255,255,.04);border-radius:8px;padding:11px;text-align:center}
+.gh-s-val{font-size:18px;font-weight:800;letter-spacing:-.02em;margin-bottom:2px}
+.gh-s-lbl{font-family:var(--mono);font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted2)}
+.gh-langs{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+.gl-tag{font-family:var(--mono);font-size:10px;padding:3px 10px;border-radius:100px;background:rgba(79,195,247,.1);border:1px solid rgba(79,195,247,.2);color:var(--blue)}
+.gh-insights{font-family:var(--mono);font-size:11px;color:var(--muted2);line-height:1.75}
+.gh-insights strong{color:var(--text);font-weight:400}
+
+.form-submit{width:100%;margin-top:30px;padding:17px;background:linear-gradient(135deg,var(--purple),#9b5cff);color:#fff;font-family:var(--mono);font-size:12px;letter-spacing:.09em;text-transform:uppercase;border-radius:13px;border:none;cursor:pointer;transition:all .3s;position:relative;overflow:hidden}
+.form-submit::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,transparent,rgba(255,255,255,.08),transparent);transform:translateX(-100%);transition:transform .5s}
+.form-submit:hover::before{transform:translateX(100%)}
+.form-submit:hover{transform:translateY(-2px);box-shadow:0 20px 56px rgba(124,92,252,.5)}
+
+/* RESULTS — auto height */
+.results-sec{background:var(--black);padding:80px 44px;position:relative;display:flex;justify-content:center}
+.results-sec::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 40% at 80% 20%,rgba(57,255,138,.05),transparent),radial-gradient(ellipse 50% 30% at 20% 80%,rgba(124,92,252,.07),transparent)}
+.results-wrap{max-width:1180px;width:100%;position:relative;z-index:1}
+.result-hero-card{background:var(--card);border:1px solid var(--border);border-radius:22px;padding:36px 44px;margin-bottom:28px;display:flex;align-items:center;gap:36px;position:relative;overflow:hidden;transition:border-color .3s}
+.result-hero-card:hover{border-color:rgba(124,92,252,.25)}
+.result-hero-card::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 100% at 0% 50%,rgba(124,92,252,.09),transparent)}
+.result-hero-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--purple),transparent)}
+.score-ring{width:96px;height:96px;flex-shrink:0;position:relative}
+.score-txt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.sn{font-size:27px;font-weight:800;line-height:1}
+.sl{font-family:var(--mono);font-size:9px;letter-spacing:.09em;color:var(--muted2);margin-top:2px}
+.r-info{flex:1;position:relative}
+.r-name{font-size:22px;font-weight:800;letter-spacing:-.03em;margin-bottom:8px}
+.r-desc{font-family:var(--mono);font-size:13px;color:var(--muted2);line-height:1.85;max-width:520px}
+.r-meta{display:flex;gap:9px;flex-wrap:wrap;margin-top:16px}
+.rmeta{font-family:var(--mono);font-size:11px;padding:5px 12px;border-radius:100px;border:1px solid var(--border);color:var(--muted2);transition:all .2s}
+.rmeta:hover{border-color:rgba(124,92,252,.3);color:var(--purple-b)}
+.r-time{background:rgba(57,255,138,.08);border:1px solid rgba(57,255,138,.2);border-radius:14px;padding:18px 24px;text-align:center;flex-shrink:0;transition:all .3s}
+.r-time:hover{background:rgba(57,255,138,.12);transform:scale(1.03)}
+.rtn{font-size:26px;font-weight:800;color:var(--green);line-height:1}
+.rtl{font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--muted2);margin-top:4px;text-transform:uppercase}
+.gh-insight-card{background:rgba(57,255,138,.04);border:1px solid rgba(57,255,138,.18);border-radius:15px;padding:24px;margin-bottom:28px;transition:border-color .3s}
+.gh-insight-card:hover{border-color:rgba(57,255,138,.3)}
+.gi-hdr{display:flex;align-items:center;gap:10px;margin-bottom:15px;flex-wrap:wrap}
+.gi-title{font-size:15px;font-weight:700}
+.gi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:13px}
+.gi-item{background:rgba(255,255,255,.03);border-radius:10px;padding:14px;transition:all .2s}
+.gi-item:hover{background:rgba(255,255,255,.05);transform:translateY(-2px)}
+.gi-val{font-size:20px;font-weight:800;letter-spacing:-.02em;margin-bottom:2px}
+.gi-lbl{font-family:var(--mono);font-size:10px;color:var(--muted2)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-bottom:22px}
+.rcard{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;transition:all .3s}
+.rcard:hover{border-color:rgba(255,255,255,.12);transform:translateY(-2px);box-shadow:0 16px 48px rgba(0,0,0,.4)}
+.rc-lbl{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:18px;display:flex;align-items:center;gap:6px}
+.gap-item{padding:14px 0;border-bottom:1px solid var(--border);transition:padding .2s}
+.gap-item:last-child{border-bottom:none;padding-bottom:0}
+.gap-item:hover{padding-left:6px}
+.gap-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.gap-name{font-size:14px;font-weight:700}
+.gbadge{font-family:var(--mono);font-size:10px;padding:3px 10px;border-radius:100px}
+.critical{background:rgba(255,79,106,.14);color:var(--red);border:1px solid rgba(255,79,106,.28)}
+.high{background:rgba(255,181,71,.14);color:var(--amber);border:1px solid rgba(255,181,71,.28)}
+.medium{background:rgba(124,92,252,.14);color:var(--purple-b);border:1px solid rgba(124,92,252,.28)}
+.str-item{padding:12px;background:rgba(57,255,138,.04);border:1px solid rgba(57,255,138,.1);border-radius:10px;margin-bottom:9px;transition:all .2s}
+.str-item:hover{background:rgba(57,255,138,.08);border-color:rgba(57,255,138,.2);transform:translateX(4px)}
+.str-item:last-child{margin-bottom:0}
+.str-top{display:flex;align-items:center;gap:9px;margin-bottom:5px}
+.str-dot{width:5px;height:5px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green)}
+.str-name{font-size:14px;font-weight:700}
+.str-src{font-family:var(--mono);font-size:10px;color:var(--muted2);margin-left:auto}
+.str-desc{font-family:var(--mono);font-size:11px;color:var(--muted2);line-height:1.6}
+.roadmap-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:36px;margin-bottom:22px}
+.phases-g{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:26px}
+.phase{background:rgba(255,255,255,.025);border:1px solid var(--border);border-radius:13px;padding:24px;transition:all .35s cubic-bezier(.22,1,.36,1)}
+.phase:hover{border-color:rgba(124,92,252,.3);transform:translateY(-6px);box-shadow:0 20px 48px rgba(0,0,0,.4)}
+.pd{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:700;margin-bottom:14px}
+.p1{background:rgba(124,92,252,.18);color:var(--purple-b);border:1px solid rgba(124,92,252,.35)}
+.p2{background:rgba(57,255,138,.14);color:var(--green);border:1px solid rgba(57,255,138,.28)}
+.p3{background:rgba(255,181,71,.14);color:var(--amber);border:1px solid rgba(255,181,71,.28)}
+.pl{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+.pt{font-size:15px;font-weight:800;margin-bottom:6px;letter-spacing:-.02em}
+.pw{font-family:var(--mono);font-size:11px;color:var(--muted2);margin-bottom:14px}
+.ptasks{list-style:none;display:flex;flex-direction:column;gap:7px}
+.ptasks li{font-family:var(--mono);font-size:11px;color:var(--muted2);display:flex;gap:7px;transition:color .2s}
+.ptasks li::before{content:'→';color:var(--purple-b);flex-shrink:0}
+.ptasks li:hover{color:var(--text)}
+.bottom-cols{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-bottom:22px}
+.proj-item{background:rgba(255,255,255,.025);border:1px solid var(--border);border-radius:11px;padding:18px;margin-bottom:12px;transition:all .25s}
+.proj-item:hover{border-color:rgba(124,92,252,.3);transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,.3)}.proj-item:last-child{margin-bottom:0}
+.proj-title{font-size:14px;font-weight:700;margin-bottom:6px}
+.proj-desc{font-family:var(--mono);font-size:11px;color:var(--muted2);line-height:1.65;margin-bottom:10px}
+.proj-tags{display:flex;gap:5px;flex-wrap:wrap}
+.pt-tag{font-family:var(--mono);font-size:10px;padding:3px 9px;border-radius:100px;background:rgba(57,255,138,.08);color:var(--green);border:1px solid rgba(57,255,138,.18)}
+.alt-item{background:rgba(255,255,255,.025);border:1px solid var(--border);border-radius:11px;padding:18px;margin-bottom:12px;display:flex;gap:14px;align-items:center;transition:all .25s}
+.alt-item:hover{border-color:rgba(124,92,252,.3);transform:translateX(4px)}
+.alt-pct{font-size:26px;font-weight:800;color:var(--purple-b);min-width:54px}
+.alt-role{font-size:14px;font-weight:700;margin-bottom:3px}
+.alt-sal{font-family:var(--mono);font-size:11px;color:var(--green)}
+.alt-desc{font-family:var(--mono);font-size:11px;color:var(--muted2);margin-top:4px;line-height:1.55}
+.pdf-bar{display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,rgba(124,92,252,.1),rgba(57,255,138,.05));border:1px solid rgba(124,92,252,.22);border-radius:15px;padding:20px 30px;gap:20px;position:relative;overflow:hidden;margin-bottom:22px}
+.pdf-bar::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--purple),var(--green),transparent)}
+.pdf-l{display:flex;align-items:center;gap:16px}
+.pdf-icon{font-size:28px}
+.pdf-title{font-size:15px;font-weight:700;margin-bottom:3px}
+.pdf-sub{font-family:var(--mono);font-size:11px;color:var(--muted2)}
+.pdf-btn{display:flex;align-items:center;gap:9px;flex-shrink:0;background:linear-gradient(135deg,var(--purple),#9b5cff);color:#fff;font-family:var(--mono);font-size:11px;letter-spacing:.07em;padding:13px 24px;border-radius:10px;border:none;cursor:pointer;transition:all .25s;white-space:nowrap}
+.pdf-btn:hover{transform:translateY(-2px);box-shadow:0 12px 36px rgba(124,92,252,.5)}
+
+/* saved toast */
+.saved-toast{position:fixed;bottom:30px;right:30px;background:var(--card);border:1px solid rgba(57,255,138,.3);border-radius:13px;padding:14px 22px;font-family:var(--mono);font-size:12px;color:var(--green);display:flex;align-items:center;gap:10px;z-index:600;transform:translateY(80px);opacity:0;transition:all .35s cubic-bezier(.34,1.56,.64,1);box-shadow:0 14px 40px rgba(0,0,0,.5)}
+.saved-toast.show{transform:none;opacity:1}
+
+/* SECTION DIVIDER */
+.sec-divider{width:100%;height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:0}
+
+/* ═══════════════════════════════════════════════════════
+   VIEW 3 — ADMIN
+═══════════════════════════════════════════════════════ */
+#v-admin{background:var(--black);min-height:100vh}
+.sidebar{width:230px;flex-shrink:0;background:var(--bg);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+.sb-logo{padding:22px 18px 18px;border-bottom:1px solid var(--border)}
+.sb-uni{font-family:var(--mono);font-size:10px;color:var(--muted2);letter-spacing:.04em;margin-top:4px}
+.sb-nav{padding:14px 10px;flex:1}
+.sb-sec{font-family:var(--mono);font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);padding:0 8px;margin-bottom:6px;margin-top:14px}
+.sb-sec:first-child{margin-top:0}
+.sb-item{display:flex;align-items:center;gap:9px;padding:10px 12px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;color:var(--muted2);transition:all .2s;margin-bottom:2px;position:relative;overflow:hidden}
+.sb-item::before{content:'';position:absolute;left:0;top:0;bottom:0;width:0;background:var(--purple);border-radius:0 4px 4px 0;transition:width .2s}
+.sb-item:hover{background:rgba(255,255,255,.05);color:var(--text);padding-left:16px}
+.sb-item.active{background:var(--purple-dim);color:var(--purple-b)}.sb-item.active::before{width:3px}
+.sb-ico{width:17px;text-align:center;font-size:13px;flex-shrink:0}
+.sb-cnt{margin-left:auto;font-family:var(--mono);font-size:10px;background:var(--purple-dim);color:var(--purple-b);padding:2px 7px;border-radius:100px}
+.sb-foot{padding:14px;border-top:1px solid var(--border)}
+.sb-user{display:flex;align-items:center;gap:9px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.03)}
+.sb-av{width:32px;height:32px;border-radius:50%;background:var(--purple-dim);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--purple-b);flex-shrink:0}
+.sb-uname{font-size:12px;font-weight:700}.sb-urole{font-family:var(--mono);font-size:10px;color:var(--muted2)}
+.sb-logout{display:flex;align-items:center;gap:7px;padding:10px 12px;font-family:var(--mono);font-size:11px;color:var(--muted);cursor:pointer;border-radius:8px;transition:all .2s;margin-top:4px}
+.sb-logout:hover{color:var(--red);background:rgba(255,79,106,.07)}
+.adm-main{flex:1;overflow-y:auto;background:var(--black)}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:20px 30px;border-bottom:1px solid var(--border);position:sticky;top:0;background:rgba(7,7,15,.9);backdrop-filter:blur(24px);z-index:10}
+.tb-title{font-size:18px;font-weight:800;letter-spacing:-.03em}
+.tb-sub{font-family:var(--mono);font-size:11px;color:var(--muted2);margin-top:2px}
+.tb-right{display:flex;align-items:center;gap:10px}
+.tb-btn{font-family:var(--mono);font-size:11px;letter-spacing:.06em;padding:9px 17px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:7px}
+.tb-btn:hover{border-color:var(--border-hi);background:rgba(255,255,255,.05)}
+.tb-btn.primary{background:var(--purple);border-color:var(--purple);color:#fff}.tb-btn.primary:hover{background:var(--purple-b)}
+.adm-page{padding:28px;display:none}
+.adm-page.active{display:block}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:26px}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:24px;position:relative;overflow:hidden;transition:all .3s;cursor:default}
+.kpi:hover{transform:translateY(-3px);box-shadow:0 12px 40px rgba(0,0,0,.4)}
+.kpi::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;border-radius:3px 0 0 3px}
+.kpi::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 0% 50%,rgba(255,255,255,.03),transparent);opacity:0;transition:opacity .3s}
+.kpi:hover::after{opacity:1}
+.kpi.kp::before{background:var(--purple)}.kpi.kg::before{background:var(--green)}.kpi.ka::before{background:var(--amber)}.kpi.kr::before{background:var(--red)}
+.kpi-lbl{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted2);margin-bottom:10px}
+.kpi-val{font-size:32px;font-weight:800;letter-spacing:-.04em;line-height:1;margin-bottom:8px}
+.kpi-d{font-family:var(--mono);font-size:11px;color:var(--muted2)}
+.kpi-d .up{color:var(--green)}.kpi-d .dn{color:var(--red)}
+.two-col-a{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
+.chart-w{position:relative;height:220px}
+.fbar{display:flex;align-items:center;gap:10px;padding:16px 22px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.srch{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:9px;padding:9px 14px;font-family:var(--mono);font-size:12px;color:var(--text);outline:none;transition:all .25s;flex:1;min-width:160px}
+.srch:focus{border-color:rgba(124,92,252,.4);background:rgba(124,92,252,.04)}
+.fsel{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:9px;padding:9px 14px;font-family:var(--mono);font-size:11px;color:var(--text);outline:none;cursor:pointer;appearance:none;transition:border-color .2s}
+.fsel:focus{border-color:rgba(124,92,252,.4)}
+table{width:100%;border-collapse:collapse}
+th{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:12px 16px;text-align:left;border-bottom:1px solid var(--border);background:rgba(255,255,255,.02);white-space:nowrap}
+td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tbody tr{transition:background .15s,transform .15s;cursor:pointer}
+tbody tr:hover{background:rgba(255,255,255,.04)}
+.td-name{font-weight:700}.td-m{font-family:var(--mono);font-size:12px;color:var(--muted2)}
+.sp{display:inline-flex;align-items:center;font-family:var(--mono);font-size:11px;font-weight:600;padding:4px 10px;border-radius:100px}
+.sp-hi{background:rgba(57,255,138,.12);color:var(--green);border:1px solid rgba(57,255,138,.25)}
+.sp-mid{background:rgba(255,181,71,.12);color:var(--amber);border:1px solid rgba(255,181,71,.25)}
+.sp-lo{background:rgba(255,79,106,.12);color:var(--red);border:1px solid rgba(255,79,106,.25)}
+.sb-badge{font-family:var(--mono);font-size:10px;letter-spacing:.06em;padding:4px 10px;border-radius:100px;display:inline-block}
+.sb-hired{background:rgba(57,255,138,.1);color:var(--green);border:1px solid rgba(57,255,138,.2)}
+.sb-active{background:var(--purple-dim);color:var(--purple-b);border:1px solid rgba(124,92,252,.2)}
+.sb-new{background:rgba(79,195,247,.1);color:var(--blue);border:1px solid rgba(79,195,247,.2)}
+.act-btn{font-family:var(--mono);font-size:10px;padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted2);cursor:pointer;transition:all .15s}
+.act-btn:hover{border-color:var(--purple);color:var(--purple-b)}
+.trend-list{display:flex;flex-direction:column;gap:14px}
+.trend-item-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.trend-name{font-size:13px;font-weight:700}.trend-pct{font-family:var(--mono);font-size:11px;color:var(--muted2)}
+.trend-bar{height:6px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden}
+.trend-fill{height:100%;border-radius:3px;transition:width 1.4s cubic-bezier(.22,1,.36,1)}
+.role-item-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.role-nm{font-size:13px;font-weight:600}.role-cnt{font-family:var(--mono);font-size:11px;color:var(--muted2)}
+.role-bar{height:8px;background:rgba(255,255,255,.05);border-radius:4px;overflow:hidden}
+.role-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--purple),var(--purple-b));transition:width 1.4s cubic-bezier(.22,1,.36,1)}
+.dm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(10px);z-index:1000;display:none;align-items:center;justify-content:center;padding:24px}
+.dm-overlay.open{display:flex;animation:fade-up .25s ease}
+.dm-modal{background:var(--card);border:1px solid var(--border-hi);border-radius:22px;width:100%;max-width:780px;max-height:90vh;overflow-y:auto;position:relative;animation:scale-in .3s cubic-bezier(.34,1.56,.64,1)}
+.dm-hero{padding:32px 36px 24px;background:linear-gradient(135deg,rgba(124,92,252,.1),rgba(57,255,138,.04));border-bottom:1px solid var(--border);position:relative}
+.dm-close{position:absolute;top:18px;right:18px;width:32px;height:32px;border-radius:9px;background:rgba(255,255,255,.06);border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--muted2);transition:all .15s}
+.dm-close:hover{background:rgba(255,79,106,.12);color:var(--red)}
+.dm-body{padding:28px 36px}
+.dm-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:26px}
+.dm-card{background:rgba(255,255,255,.025);border:1px solid var(--border);border-radius:13px;padding:20px}
+.alert-info{background:rgba(124,92,252,.07);border:1px solid rgba(124,92,252,.2);border-radius:10px;padding:14px 18px;font-family:var(--mono);font-size:12px;color:var(--muted2);display:flex;align-items:center;gap:10px;margin-bottom:16px}
+
+/* PRINT */
+@media print{
+  #cursor,#cursor-ring,#scroll-progress,body::before{display:none!important}
+  .app-nav,.hero-sec,.form-sec,.pdf-btn,nav{display:none!important}
+  #v-student{height:auto;overflow:visible}
+  .results-sec{padding:0;display:block}
+  body{background:#fff;color:#111}
+  .result-hero-card,.rcard,.roadmap-card,.phase,.proj-item,.alt-item,.gh-insight-card{background:#f9f9f9!important;border:1px solid #ddd!important;color:#111!important;break-inside:avoid}
+  .two-col,.bottom-cols,.phases-g,.gi-grid{grid-template-columns:1fr 1fr!important}
+  .pdf-report-hdr{display:block!important}
+  .sn,.rtn{color:#16a34a!important}
+}
+.pdf-report-hdr{display:none;padding:26px 0 20px;border-bottom:2px solid #7c3aed;margin-bottom:26px}
+
+@media(max-width:768px){
+  .role-grid{grid-template-columns:1fr}
+  .form-grid,.two-col,.bottom-cols,.phases-g,.dm-2,.two-col-a{grid-template-columns:1fr}
+  .gh-stats-g{grid-template-columns:1fr 1fr}
+  .kpi-grid{grid-template-columns:1fr 1fr}
+  .result-hero-card{flex-direction:column;text-align:center}
+  .app-nav{padding:13px 18px}
+  .land-nav{padding:16px 22px}
+  #v-admin{flex-direction:column}
+  .sidebar{width:100%;height:auto;position:relative}
+  .form-sec{padding:100px 20px 60px}
+  .results-sec{padding:60px 20px}
+}
+</style>
+</head>
+<body>
+
+<!-- Cursor -->
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+<div id="scroll-progress"></div>
+
+<!-- ═══════════════════════════════════════════════════════
+     VIEW 1 — LANDING
+═══════════════════════════════════════════════════════ -->
+<div class="view active" id="v-landing">
+  <div class="land-grid"></div>
+  <nav class="land-nav">
+    <div class="logo-mark"><div class="logo-dot"></div>GapSync</div>
+    <span class="mono-tag purple-tag">AI CAREER ENGINE v2.0</span>
+  </nav>
+  <main class="land-main">
+    <div class="land-eyebrow">AI-Powered Career Intelligence</div>
+    <h1 class="land-h1">Who are you<br><em>signing in as?</em></h1>
+    <p class="land-p">Choose your role. Students get AI-powered gap analysis with GitHub intelligence. Universities get full institutional dashboards.</p>
+    <div class="role-grid">
+      <div class="role-card student" onclick="openModal('student')">
+        <div class="rc-inner">
+          <div class="rc-icon">🎓</div>
+          <div class="rc-badge">Student Access</div>
+          <div class="rc-title">I'm a Student</div>
+          <div class="rc-desc">Map your skill gaps, link your GitHub repos, get an AI-generated learning roadmap and see your path to placement.</div>
+          <ul class="rc-feats">
+            <li>AI-powered gap score &amp; analysis</li>
+            <li>GitHub repo skill extraction</li>
+            <li>Week-by-week learning roadmap</li>
+            <li>Export full PDF career report</li>
+          </ul>
+          <div class="rc-cta">Sign in as Student <span class="rc-arrow">→</span></div>
+        </div>
+      </div>
+      <div class="role-card admin" onclick="openModal('admin')">
+        <div class="rc-inner">
+          <div class="rc-icon">🏛</div>
+          <div class="rc-badge">University Admin</div>
+          <div class="rc-title">I'm an Admin</div>
+          <div class="rc-desc">Full institution dashboard — every student's record, cohort analytics, skill gap trends, and live placement tracking.</div>
+          <ul class="rc-feats">
+            <li>All student records &amp; live scores</li>
+            <li>Skill gap trends across cohort</li>
+            <li>Role distribution &amp; placement stats</li>
+            <li>Export CSV reports</li>
+          </ul>
+          <div class="rc-cta">Sign in as Admin <span class="rc-arrow">→</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="land-badges">
+      <div class="land-badge">🔒 Secure · Supabase</div>
+      <div class="land-badge">🏫 University Licensed</div>
+      <div class="land-badge">AI by LLaMA 3.3 70B</div>
+      <div class="land-badge">40K+ jobs analyzed</div>
+      <div class="land-badge">GitHub repo analysis</div>
+    </div>
+  </main>
+</div>
+
+<!-- STUDENT MODAL -->
+<div class="modal-overlay" id="modal-student" onclick="handleOvClick(event,'student')">
+  <div class="modal">
+    <div class="modal-stripe s"></div>
+    <button class="modal-close" onclick="closeModal('student')">✕</button>
+    <div class="modal-body">
+      <div class="modal-icon s">🎓</div>
+      <div class="modal-title">Student Portal</div>
+      <div class="modal-sub">Sign in or register with your university email.<br>Demo: <span class="hl">student@university.edu / student123</span></div>
+      <div class="modal-tabs">
+        <div class="mtab active" onclick="switchTab('student','login')">Sign In</div>
+        <div class="mtab" onclick="switchTab('student','register')">Register</div>
+      </div>
+      <div class="form-pane active" id="s-login-pane">
+        <div class="field"><label>University Email</label><input type="email" id="s-email" placeholder="you@university.edu" autocomplete="email"></div>
+        <div class="field"><label>Password</label><input type="password" id="s-pass" placeholder="••••••••"></div>
+        <div class="err-box" id="s-err">Incorrect credentials. Check email/password.</div>
+        <button class="btn btn-green btn-full" onclick="loginStudent()">Sign in &amp; Analyze →</button>
+        <div id="s-db-status" class="db-status" style="display:none"></div>
+      </div>
+      <div class="form-pane" id="s-register-pane">
+        <div class="field"><label>Full Name</label><input type="text" id="s-reg-name" placeholder="Your full name"></div>
+        <div class="field"><label>University Email</label><input type="email" id="s-reg-email" placeholder="you@university.edu"></div>
+        <div class="field"><label>Password (min 6 chars)</label><input type="password" id="s-reg-pass" placeholder="Create a password"></div>
+        <div class="err-box" id="s-reg-err">Please fill all fields correctly.</div>
+        <button class="btn btn-green btn-full" onclick="registerStudent()">Create Account →</button>
+        <div id="s-reg-db-status" class="db-status" style="display:none"></div>
+      </div>
+      <div class="modal-divider"></div>
+      <div class="modal-switch" onclick="closeModal('student');openModal('admin')">Admin? Sign in here →</div>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN MODAL -->
+<div class="modal-overlay" id="modal-admin" onclick="handleOvClick(event,'admin')">
+  <div class="modal">
+    <div class="modal-stripe a"></div>
+    <button class="modal-close" onclick="closeModal('admin')">✕</button>
+    <div class="modal-body">
+      <div class="modal-icon a">🏛</div>
+      <div class="modal-title">Admin Portal</div>
+      <div class="modal-sub">University authorized access.<br>Demo: <span class="hlp">admin@university.edu / admin123</span></div>
+      <div class="modal-tabs">
+        <div class="mtab active" onclick="switchTab('admin','login')">Sign In</div>
+        <div class="mtab" onclick="switchTab('admin','register')">Register University</div>
+      </div>
+      <div class="form-pane active" id="a-login-pane">
+        <div class="field"><label>Admin Email</label><input type="email" id="a-email" placeholder="admin@university.edu"></div>
+        <div class="field"><label>Password</label><input type="password" id="a-pass" placeholder="••••••••"></div>
+        <div class="err-box" id="a-err">Incorrect credentials.</div>
+        <button class="btn btn-primary btn-full" onclick="loginAdmin()">Access Dashboard →</button>
+        <div id="a-db-status" class="db-status" style="display:none"></div>
+      </div>
+      <div class="form-pane" id="a-register-pane">
+        <div class="field"><label>University Name</label><input type="text" id="a-reg-uni" placeholder="e.g. MIT World Peace University"></div>
+        <div class="field"><label>Admin Email</label><input type="email" id="a-reg-email" placeholder="admin@university.edu"></div>
+        <div class="field"><label>Password</label><input type="password" id="a-reg-pass" placeholder="Create a strong password"></div>
+        <div class="err-box" id="a-reg-err">Please fill all fields.</div>
+        <button class="btn btn-primary btn-full" onclick="registerAdmin()">Register University →</button>
+      </div>
+      <div class="modal-divider"></div>
+      <div class="modal-switch" onclick="closeModal('admin');openModal('student')">Student? Sign in here →</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     VIEW 2 — STUDENT APP
+═══════════════════════════════════════════════════════ -->
+<div class="view" id="v-student">
+  <div class="pdf-report-hdr">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+      <div style="width:10px;height:10px;border-radius:50%;background:#7c3aed"></div>
+      <span style="font-size:19px;font-weight:800">GapSync</span>
+      <span style="font-family:monospace;font-size:9px;color:#7c3aed;border:1px solid #7c3aed;padding:2px 8px;border-radius:100px">CAREER REPORT</span>
+    </div>
+    <div style="font-family:monospace;font-size:12px;color:#555">Generated: <span id="pdf-date"></span></div>
+  </div>
+
+  <nav class="app-nav" id="app-nav">
+    <div class="logo-mark"><div class="logo-dot"></div>GapSync</div>
+    <div class="nav-right">
+      <div class="nav-links">
+        <button class="nav-link-btn" onclick="scrollToId('sec-hero')">Home</button>
+        <button class="nav-link-btn" onclick="scrollToId('sec-form')">Profile</button>
+        <button class="nav-link-btn" onclick="scrollToId('sec-results')">Results</button>
+      </div>
+      <div class="nav-user-pill"><div class="nav-avatar" id="nav-av">S</div><span id="nav-name-display">Student</span></div>
+      <button class="nav-signout" onclick="signOut()">Sign out</button>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero-sec" id="sec-hero">
+    <div class="hero-bg-grad"></div>
+    <div class="hero-grid-lines"></div>
+    <div class="orb o1"></div>
+    <div class="orb o2"></div>
+    <div class="orb o3"></div>
+    <div class="hero-content">
+      <div class="h-eyebrow">Powered by Groq + LLaMA 3.3 70B</div>
+      <h1 class="hero-h1"><span class="l1">Know your gaps.</span><span class="l2">Own your future.</span></h1>
+      <p class="hero-sub">Enter your profile, link your GitHub repos, and let the AI benchmark you against 40K+ real job listings to build your personalized roadmap in seconds.</p>
+      <div class="hero-btns">
+        <button class="btn btn-primary" onclick="scrollToId('sec-form')">🎯 Start my analysis</button>
+        <button class="btn btn-ghost" onclick="scrollToId('sec-results')">See sample results</button>
+      </div>
+      <div class="hero-stats">
+        <div class="stat-p"><strong>12</strong> career tracks</div>
+        <div class="stat-p"><strong>40K+</strong> jobs analyzed</div>
+        <div class="stat-p">GitHub <strong>repo intelligence</strong></div>
+        <div class="stat-p"><strong>Live</strong> market benchmarks</div>
+      </div>
+    </div>
+    <div class="scroll-cue">
+      <span>Fill your profile</span>
+      <div class="scroll-cue-line"></div>
+    </div>
+  </section>
+
+  <div class="sec-divider"></div>
+
+  <!-- FORM — regular section, no snap -->
+  <section class="form-sec" id="sec-form">
+    <div class="form-inner">
+      <div class="sec-label reveal">Your Profile</div>
+      <h2 class="sec-h2 reveal rd1">Tell us about <em>yourself.</em></h2>
+      <p class="sec-sub reveal rd2">Your data auto-saves as you type. Add GitHub repos for a more accurate analysis and a score boost.</p>
+
+      <div class="form-card reveal rd2">
+        <div class="form-grid">
+          <div class="fg"><label>Your Name</label><input type="text" id="f-name" placeholder="e.g. Mudit Sharma"></div>
+          <div class="fg"><label>Target Role</label>
+            <select id="f-role">
+              <option>Full Stack Developer</option>
+              <option>Frontend Developer</option>
+              <option>Backend Developer</option>
+              <option>Data Scientist</option>
+              <option>ML Engineer</option>
+              <option>DevOps Engineer</option>
+              <option>Cloud Engineer</option>
+              <option>Cybersecurity Analyst</option>
+              <option>UI/UX Designer</option>
+              <option>Mobile App Developer</option>
+              <option>Product Manager</option>
+              <option>QA Engineer</option>
+              <option>Business Analyst</option>
+              <option>Data Analyst</option>
+              <option>Data Engineer</option>
+              <option>Database Administrator</option>
+              <option>Blockchain Developer</option>
+              <option>Game Developer</option>
+              <option>Embedded Systems Engineer</option>
+              <option>AR/VR Developer</option>
+              <option>AI Researcher</option>
+              <option>Network Engineer</option>
+              <option>Robotics Engineer</option>
+              <option>Web Designer</option>
+              <option>SEO Specialist</option>
+              <option>Digital Marketing Analyst</option>
+              <option>Content Creator</option>
+              <option>Technical Writer</option>
+              <option>IT Support Specialist</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="fg"><label>Degree / Branch</label><input type="text" id="f-degree" placeholder="e.g. B.Tech Computer Science"></div>
+          <div class="fg"><label>Year &amp; CGPA</label>
+            <div style="display:flex;gap:10px">
+              <select id="f-year" style="flex:1"><option>1st Year</option><option>2nd Year</option><option>3rd Year</option><option>4th Year</option><option>Graduate</option></select>
+              <input type="text" id="f-cgpa" placeholder="CGPA" style="width:84px;flex:0;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:11px;padding:12px 14px;font-family:var(--mono);font-size:13px;color:var(--text);outline:none;transition:all .25s">
+            </div>
+          </div>
+          <div class="fg full">
+            <label>Skills (type + Enter to add)</label>
+            <input type="text" id="f-skill-input" placeholder="e.g. Python, React, SQL…">
+            <div class="skills-tags" id="skills-container"></div>
+          </div>
+          <div class="fg full"><label>Certifications</label><input type="text" id="f-certs" placeholder="e.g. AWS Cloud Practitioner, Meta Frontend Dev"></div>
+          <div class="fg full"><label>Projects</label><textarea id="f-projects" placeholder="Describe your projects briefly. e.g. Built a full stack MERN Airbnb clone, weather API app…"></textarea></div>
+
+          <!-- GITHUB -->
+          <div class="gh-box full">
+            <div class="gh-hdr">
+              <div class="gh-ico">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+              </div>
+              <div><div class="gh-ttl">GitHub Repository Analysis</div><div class="gh-stl">Paste your repo URLs — AI extracts your real skills from code</div></div>
+              <div class="gh-opt">Optional · Boosts score</div>
+            </div>
+            <div id="gh-repos-wrap"></div>
+          </div>
+        </div>
+        <button class="form-submit" onclick="analyzeAndShowResults()">🎯 Analyze My Full Skill Gap →</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="sec-divider"></div>
+
+  <!-- RESULTS -->
+  <section class="results-sec" id="sec-results">
+    <div class="results-wrap">
+      <div class="sec-label reveal">Your Analysis</div>
+      <div id="results-content">
+        <div style="text-align:center;padding:80px 0;font-family:var(--mono);font-size:13px;color:var(--muted2)">
+          Fill in your profile above and click <strong style="color:var(--purple-b)">Analyze My Full Skill Gap</strong> to see your personalized analysis here.
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     VIEW 3 — ADMIN
+═══════════════════════════════════════════════════════ -->
+<div class="view" id="v-admin">
+  <aside class="sidebar">
+    <div class="sb-logo">
+      <div class="logo-mark" style="font-size:15px"><div class="logo-dot"></div>GapSync</div>
+      <div class="sb-uni" id="sb-uni-name">University Portal</div>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-sec">Overview</div>
+      <div class="sb-item active" onclick="showAdmPage('overview',this)"><span class="sb-ico">📊</span>Dashboard</div>
+      <div class="sb-sec">Students</div>
+      <div class="sb-item" onclick="showAdmPage('students',this)"><span class="sb-ico">👥</span>All Students<span class="sb-cnt" id="stud-cnt">—</span></div>
+      <div class="sb-sec">Analytics</div>
+      <div class="sb-item" onclick="showAdmPage('trends',this)"><span class="sb-ico">📈</span>Skill Trends</div>
+      <div class="sb-item" onclick="showAdmPage('roles',this)"><span class="sb-ico">🎯</span>Role Distribution</div>
+    </nav>
+    <div class="sb-foot">
+      <div class="sb-user"><div class="sb-av">A</div><div><div class="sb-uname" id="sb-admin-name">Admin</div><div class="sb-urole">Super Admin</div></div></div>
+      <div class="sb-logout" onclick="signOut()">↩ Sign out</div>
+    </div>
+  </aside>
+  <main class="adm-main">
+    <div class="adm-page active" id="ap-overview">
+      <div class="topbar"><div><div class="tb-title">Dashboard Overview</div><div class="tb-sub" id="tb-updated">—</div></div><div class="tb-right"><button class="tb-btn" onclick="showAdmPage('students',document.querySelectorAll('.sb-item')[1])">View all students</button><button class="tb-btn primary" onclick="exportCSV()">⬇ Export CSV</button></div></div>
+      <div style="padding:26px">
+        <div class="kpi-grid" id="kpi-grid"></div>
+        <div class="two-col-a">
+          <div class="panel"><div class="panel-hdr"><div><div class="panel-title">Score Trend</div><div class="panel-sub">Avg gap score by month</div></div></div><div class="panel-body"><div class="chart-w"><canvas id="scoreChart"></canvas></div></div></div>
+          <div class="panel"><div class="panel-hdr"><div><div class="panel-title">Top Missing Skills</div></div></div><div class="panel-body"><div class="chart-w"><canvas id="gapChart"></canvas></div></div></div>
+        </div>
+        <div class="two-col-a">
+          <div class="panel"><div class="panel-hdr"><div><div class="panel-title">Recent Activity</div></div></div><div style="overflow-x:auto"><table><thead><tr><th>Student</th><th>Role</th><th>Score</th><th>Status</th></tr></thead><tbody id="recent-tbody"></tbody></table></div></div>
+          <div class="panel"><div class="panel-hdr"><div><div class="panel-title">Role Split</div></div></div><div class="panel-body"><div class="chart-w"><canvas id="roleChart"></canvas></div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="adm-page" id="ap-students">
+      <div class="topbar"><div><div class="tb-title">All Students</div><div class="tb-sub">Real submissions + demo data</div></div><div class="tb-right"><button class="tb-btn primary" onclick="exportCSV()">⬇ Export CSV</button></div></div>
+      <div style="padding:26px">
+        <div class="panel">
+          <div class="fbar">
+            <input class="srch" type="text" placeholder="🔍  Search name, role, skills…" oninput="filterStudents(this.value)">
+            <select class="fsel" onchange="filterByRole(this.value)"><option value="">All Roles</option><option>Full Stack Developer</option><option>Frontend Developer</option><option>Backend Developer</option><option>Data Scientist</option><option>ML Engineer</option><option>DevOps Engineer</option><option>Cloud Engineer</option><option>Cybersecurity Analyst</option><option>UI/UX Designer</option><option>Mobile App Developer</option><option>Product Manager</option><option>QA Engineer</option><option>Business Analyst</option><option>Blockchain Developer</option><option>Game Developer</option><option>Embedded Systems Engineer</option><option>AR/VR Developer</option><option>AI Researcher</option><option>Network Engineer</option><option>Technical Writer</option><option>IT Support Specialist</option><option>Data Engineer</option><option>Database Administrator</option><option>Robotics Engineer</option><option>Web Designer</option><option>SEO Specialist</option><option>Digital Marketing Analyst</option><option>Content Creator</option><option>Other</option></select>
+            <select class="fsel" onchange="filterByScore(this.value)"><option value="">All Scores</option><option value="hi">High (80+)</option><option value="mid">Mid (50–79)</option><option value="lo">Low (&lt;50)</option></select>
+          </div>
+          <div style="overflow-x:auto"><table><thead><tr><th>Student</th><th>Role</th><th>Year</th><th>CGPA</th><th>Score</th><th>Top Gap</th><th>Status</th><th></th></tr></thead><tbody id="stud-tbody"></tbody></table></div>
+        </div>
+      </div>
+    </div>
+    <div class="adm-page" id="ap-trends">
+      <div class="topbar"><div><div class="tb-title">Skill Gap Trends</div></div></div>
+      <div style="padding:26px">
+        <div class="alert-info">💡 Systemic gaps — useful for curriculum planning.</div>
+        <div class="two-col-a">
+          <div class="panel"><div class="panel-hdr"><div><div class="panel-title">Gap Frequency</div><div class="panel-sub">% of students missing each skill</div></div></div><div class="panel-body"><div class="trend-list" id="gap-trend-list"></div></div></div>
+          <div class="panel"><div class="panel-hdr"><div><div class="panel-title">Strength Frequency</div></div></div><div class="panel-body"><div class="trend-list" id="str-trend-list"></div></div></div>
+        </div>
+        <div class="panel" style="margin-top:18px"><div class="panel-hdr"><div><div class="panel-title">Score Improvement Over Time</div></div></div><div class="panel-body"><div class="chart-w" style="height:240px"><canvas id="trendLine"></canvas></div></div></div>
+      </div>
+    </div>
+    <div class="adm-page" id="ap-roles">
+      <div class="topbar"><div><div class="tb-title">Role Distribution</div></div></div>
+      <div style="padding:26px">
+        <div class="two-col-a">
+          <div class="panel"><div class="panel-hdr"><div><div class="panel-title">Role Breakdown</div></div></div><div class="panel-body"><div id="role-list" style="display:flex;flex-direction:column;gap:13px"></div></div></div>
+          <div class="panel"><div class="panel-hdr"><div><div class="panel-title">Distribution Chart</div></div></div><div class="panel-body"><div class="chart-w" style="height:260px"><canvas id="rolePie"></canvas></div></div></div>
+        </div>
+        <div class="two-col-a" style="margin-top:18px">
+          <div class="panel"><div class="panel-hdr"><div><div class="panel-title">Avg Score by Role</div></div></div><div class="panel-body"><div class="chart-w"><canvas id="roleScore"></canvas></div></div></div>
+          <div class="panel"><div class="panel-hdr"><div><div class="panel-title">Avg Weeks to Job-Ready</div></div></div><div class="panel-body"><div class="chart-w"><canvas id="roleTime"></canvas></div></div></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="dm-overlay" id="dm-overlay" onclick="closeDM(event)"><div class="dm-modal" id="dm-modal"></div></div>
+<div class="saved-toast" id="saved-toast">✅ Profile saved to database</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// SUPABASE SETUP
+// Replace with YOUR project URL and anon key from supabase.com
+// ═══════════════════════════════════════════════════════
+const SUPABASE_URL = 'https://YOUR_PROJECT.supabase.co';
+const SUPABASE_ANON_KEY = 'YOUR_ANON_KEY';
+
+let sb = null;
+let sbReady = false;
+
+try {
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  sbReady = !SUPABASE_URL.includes('YOUR_PROJECT');
+} catch(e) { sbReady = false; }
+
+// ── FALLBACK: localStorage when Supabase not configured ──
+const LS = {
+  get: k => { try { return JSON.parse(localStorage.getItem('gs_' + k)); } catch { return null; } },
+  set: (k, v) => localStorage.setItem('gs_' + k, JSON.stringify(v)),
+  del: k => localStorage.removeItem('gs_' + k)
+};
+
+function isConfigured() { return sbReady; }
+
+function dbStatus(elId, msg, ok) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  el.style.display = 'block';
+  el.className = 'db-status ' + (ok ? 'ok' : 'err');
+  el.textContent = msg;
+}
+
+// ═══════════════════════════════════════════════════════
+// SEED LOCAL DEMO DATA
+// ═══════════════════════════════════════════════════════
+function seedDemoData() {
+  if (LS.get('seeded')) return;
+  const admins = [{ email: 'admin@university.edu', pass: 'admin123', name: 'Admin User', uni: 'MIT World Peace University' }];
+  LS.set('admins', admins);
+  const students = [
+    { email: 'student@university.edu', pass: 'student123', name: 'Mudit Sharma', profile: { name: 'Mudit Sharma', role: 'Full Stack Developer', degree: 'B.Tech CS', year: '2nd Year', cgpa: '8.96', skills: ['python', 'react', 'html', 'css', 'js'], certs: 'none', projects: 'Built a full stack MERN Airbnb clone, Amazon frontend clone, weather API app', githubUrls: ['', '', ''] }, analysis: makeAnalysis('Mudit Sharma', 'Full Stack Developer', ['python','react','html','css','js'], 0), status: 'active' },
+    { email: 'priya@mit.edu', pass: 'x', name: 'Priya Nair', profile: { name: 'Priya Nair', role: 'Frontend Developer', degree: 'B.Tech CS', year: '3rd Year', cgpa: '9.1', skills: ['html','css','javascript','react','typescript'], certs: 'Meta Frontend Dev', projects: 'Portfolio site, React e-commerce', githubUrls:['','',''] }, analysis: makeAnalysis('Priya Nair', 'Frontend Developer', ['html','css','javascript','react','typescript'], 0), status: 'hired' },
+    { email: 'aarav@mit.edu', pass: 'x', name: 'Aarav Mehta', profile: { name: 'Aarav Mehta', role: 'Full Stack Developer', degree: 'B.Tech IT', year: '4th Year', cgpa: '7.8', skills: ['html','css','js','node.js','express'], certs: 'AWS Cloud Practitioner', projects: 'Node.js REST API, blog CMS', githubUrls:['','',''] }, analysis: makeAnalysis('Aarav Mehta', 'Full Stack Developer', ['html','css','js','node.js','express'], 0), status: 'active' },
+    { email: 'sneha@mit.edu', pass: 'x', name: 'Sneha Patel', profile: { name: 'Sneha Patel', role: 'Data Scientist', degree: 'B.Sc CS', year: '3rd Year', cgpa: '8.5', skills: ['python','pandas','numpy','sql'], certs: 'none', projects: 'EDA on Kaggle datasets', githubUrls:['','',''] }, analysis: makeAnalysis('Sneha Patel', 'Data Scientist', ['python','pandas','numpy','sql'], 0), status: 'active' },
+    { email: 'rohan@mit.edu', pass: 'x', name: 'Rohan Kapoor', profile: { name: 'Rohan Kapoor', role: 'Backend Developer', degree: 'B.Tech CS', year: 'Graduate', cgpa: '8.2', skills: ['node.js','python','mongodb','postgresql','docker','redis'], certs: 'AWS Developer Associate', projects: 'Microservices API, payment gateway', githubUrls:['','',''] }, analysis: makeAnalysis('Rohan Kapoor', 'Backend Developer', ['node.js','python','mongodb','postgresql','docker','redis'], 8), status: 'hired' },
+    { email: 'ananya@mit.edu', pass: 'x', name: 'Ananya Singh', profile: { name: 'Ananya Singh', role: 'ML Engineer', degree: 'B.Tech CS', year: '2nd Year', cgpa: '9.3', skills: ['python','numpy','pandas'], certs: 'none', projects: 'Basic regression models', githubUrls:['','',''] }, analysis: makeAnalysis('Ananya Singh', 'ML Engineer', ['python','numpy','pandas'], 0), status: 'new' },
+    { email: 'vikram@mit.edu', pass: 'x', name: 'Vikram Joshi', profile: { name: 'Vikram Joshi', role: 'DevOps Engineer', degree: 'B.Tech ECE', year: '4th Year', cgpa: '7.5', skills: ['linux','bash','git','docker'], certs: 'Docker Certified', projects: 'CI pipeline setup', githubUrls:['','',''] }, analysis: makeAnalysis('Vikram Joshi', 'DevOps Engineer', ['linux','bash','git','docker'], 0), status: 'active' },
+    { email: 'pooja@mit.edu', pass: 'x', name: 'Pooja Iyer', profile: { name: 'Pooja Iyer', role: 'ML Engineer', degree: 'B.Tech CS', year: 'Graduate', cgpa: '9.0', skills: ['python','pytorch','tensorflow','sklearn','docker','mlflow'], certs: 'TensorFlow Dev Certificate', projects: 'Image classifier, NLP model', githubUrls:['','',''] }, analysis: makeAnalysis('Pooja Iyer', 'ML Engineer', ['python','pytorch','tensorflow','sklearn','docker','mlflow'], 12), status: 'hired' },
+  ];
+  LS.set('students', students);
+  LS.set('seeded', true);
+}
+
+// ═══════════════════════════════════════════════════════
+// SESSION
+// ═══════════════════════════════════════════════════════
+let currentUser = null;
+
+function getSession() { return LS.get('session'); }
+function setSession(s) { LS.set('session', s); currentUser = s; }
+function clearSession() { LS.del('session'); currentUser = null; }
+
+// ═══════════════════════════════════════════════════════
+// VIEWS
+// ═══════════════════════════════════════════════════════
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ═══════════════════════════════════════════════════════
+// MODALS
+// ═══════════════════════════════════════════════════════
+function openModal(t) {
+  document.getElementById('modal-' + t).classList.add('open');
+  setTimeout(() => document.getElementById(t === 'student' ? 's-email' : 'a-email')?.focus(), 300);
+}
+function closeModal(t) { document.getElementById('modal-' + t).classList.remove('open'); }
+function handleOvClick(e, t) { if (e.target === document.getElementById('modal-' + t)) closeModal(t); }
+function switchTab(modal, tab) {
+  const prefix = modal === 'student' ? 's' : 'a';
+  document.querySelectorAll(`#modal-${modal} .mtab`).forEach(t => t.classList.remove('active'));
+  document.querySelectorAll(`#modal-${modal} .form-pane`).forEach(p => p.classList.remove('active'));
+  const idx = tab === 'login' ? 0 : 1;
+  document.querySelectorAll(`#modal-${modal} .mtab`)[idx].classList.add('active');
+  document.getElementById(`${prefix}-${tab}-pane`).classList.add('active');
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeModal('student'); closeModal('admin'); }
+  if (e.key === 'Enter') {
+    if (document.getElementById('modal-student').classList.contains('open')) loginStudent();
+    if (document.getElementById('modal-admin').classList.contains('open')) loginAdmin();
+  }
+});
+
+// ═══════════════════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════════════════
+async function loginStudent() {
+  const email = document.getElementById('s-email').value.trim().toLowerCase();
+  const pass = document.getElementById('s-pass').value;
+  const err = document.getElementById('s-err');
+
+  if (isConfigured() && sb) {
+    dbStatus('s-db-status', '⏳ Signing in via Supabase…', true);
+    try {
+      const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+      if (error) throw error;
+      // Fetch profile
+      const { data: profile } = await sb.from('profiles').select('*').eq('id', data.user.id).single();
+      const user = { type: 'student', email, name: profile?.name || email, id: data.user.id, profile: profile?.profile_data || null, analysis: profile?.analysis || null, status: profile?.status || 'active' };
+      setSession(user);
+      closeModal('student');
+      loadStudentView(user);
+      return;
+    } catch (e) {
+      dbStatus('s-db-status', '⚠️ Supabase error — using local fallback', false);
+    }
+  }
+
+  // Local fallback
+  const students = LS.get('students') || [];
+  const found = students.find(s => s.email === email && s.pass === pass);
+  if (found) {
+    setSession({ type: 'student', email: found.email, name: found.name, local: true });
+    closeModal('student');
+    loadStudentView(found);
+  } else {
+    err.style.display = 'block';
+    setTimeout(() => err.style.display = 'none', 4000);
+  }
+}
+
+async function registerStudent() {
+  const name = document.getElementById('s-reg-name').value.trim();
+  const email = document.getElementById('s-reg-email').value.trim().toLowerCase();
+  const pass = document.getElementById('s-reg-pass').value;
+  const err = document.getElementById('s-reg-err');
+  if (!name || !email || pass.length < 6) { err.textContent = 'Please fill all fields (password min 6 chars).'; err.style.display = 'block'; setTimeout(() => err.style.display = 'none', 4000); return; }
+
+  if (isConfigured() && sb) {
+    dbStatus('s-reg-db-status', '⏳ Creating account in Supabase…', true);
+    try {
+      const { data, error } = await sb.auth.signUp({ email, password: pass, options: { data: { name, role: 'student' } } });
+      if (error) throw error;
+      // Insert profile
+      await sb.from('profiles').insert({ id: data.user.id, email, name, role: 'student', status: 'new', profile_data: null, analysis: null, created_at: new Date().toISOString() });
+      setSession({ type: 'student', email, name, id: data.user.id, profile: null, analysis: null, status: 'new' });
+      closeModal('student');
+      loadStudentView({ email, name, profile: null, analysis: null, status: 'new' });
+      return;
+    } catch (e) {
+      dbStatus('s-reg-db-status', '⚠️ Supabase error — saving locally: ' + e.message, false);
+    }
+  }
+
+  // Local fallback
+  const students = LS.get('students') || [];
+  if (students.find(s => s.email === email)) { err.textContent = 'Email already registered. Please sign in.'; err.style.display = 'block'; setTimeout(() => err.style.display = 'none', 4000); return; }
+  const newS = { email, pass, name, profile: { name, role: 'Full Stack Developer', degree: '', year: '2nd Year', cgpa: '', skills: [], certs: '', projects: '', githubUrls: ['', '', ''] }, analysis: null, status: 'new' };
+  students.push(newS);
+  LS.set('students', students);
+  setSession({ type: 'student', email, name, local: true });
+  closeModal('student');
+  loadStudentView(newS);
+}
+
+async function loginAdmin() {
+  const email = document.getElementById('a-email').value.trim().toLowerCase();
+  const pass = document.getElementById('a-pass').value;
+  const err = document.getElementById('a-err');
+
+  if (isConfigured() && sb) {
+    dbStatus('a-db-status', '⏳ Signing in via Supabase…', true);
+    try {
+      const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+      if (error) throw error;
+      const { data: profile } = await sb.from('profiles').select('*').eq('id', data.user.id).single();
+      if (profile?.role !== 'admin') throw new Error('Not an admin account.');
+      setSession({ type: 'admin', email, name: profile.name || 'Admin', uni: profile.university || 'University', id: data.user.id });
+      closeModal('admin');
+      loadAdminView({ email, name: profile.name, uni: profile.university });
+      return;
+    } catch (e) {
+      dbStatus('a-db-status', '⚠️ ' + e.message, false);
+    }
+  }
+
+  // Local fallback
+  const admins = LS.get('admins') || [];
+  const found = admins.find(a => a.email === email && a.pass === pass);
+  if (found) {
+    setSession({ type: 'admin', email: found.email, name: found.name, uni: found.uni, local: true });
+    closeModal('admin');
+    loadAdminView(found);
+  } else {
+    err.style.display = 'block';
+    setTimeout(() => err.style.display = 'none', 4000);
+  }
+}
+
+async function registerAdmin() {
+  const uni = document.getElementById('a-reg-uni').value.trim();
+  const email = document.getElementById('a-reg-email').value.trim().toLowerCase();
+  const pass = document.getElementById('a-reg-pass').value;
+  const err = document.getElementById('a-reg-err');
+  if (!uni || !email || !pass) { err.style.display = 'block'; setTimeout(() => err.style.display = 'none', 4000); return; }
+
+  if (isConfigured() && sb) {
+    try {
+      const { data, error } = await sb.auth.signUp({ email, password: pass, options: { data: { name: 'Admin', role: 'admin' } } });
+      if (error) throw error;
+      await sb.from('profiles').insert({ id: data.user.id, email, name: 'Admin', role: 'admin', university: uni, status: 'active', created_at: new Date().toISOString() });
+      setSession({ type: 'admin', email, name: 'Admin', uni, id: data.user.id });
+      closeModal('admin');
+      loadAdminView({ email, name: 'Admin', uni });
+      return;
+    } catch (e) { /* fallthrough */ }
+  }
+
+  const admins = LS.get('admins') || [];
+  if (admins.find(a => a.email === email)) { err.textContent = 'Email already registered.'; err.style.display = 'block'; return; }
+  admins.push({ email, pass, name: 'Admin', uni });
+  LS.set('admins', admins);
+  setSession({ type: 'admin', email, name: 'Admin', uni, local: true });
+  closeModal('admin');
+  loadAdminView({ email, name: 'Admin', uni });
+}
+
+async function signOut() {
+  if (isConfigured() && sb) { try { await sb.auth.signOut(); } catch(e) {} }
+  clearSession();
+  destroyCharts();
+  showView('v-landing');
+}
+
+// ═══════════════════════════════════════════════════════
+// STUDENT VIEW
+// ═══════════════════════════════════════════════════════
+let userSkills = [];
+
+function loadStudentView(user) {
+  showView('v-student');
+  const name = user.profile?.name || user.name || 'Student';
+  document.getElementById('nav-name-display').textContent = name;
+  document.getElementById('nav-av').textContent = name[0].toUpperCase();
+  document.getElementById('pdf-date').textContent = new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' });
+
+  const p = user.profile || {};
+  setValue('f-name', p.name || name);
+  setSelectVal('f-role', p.role || 'Full Stack Developer');
+  setValue('f-degree', p.degree || '');
+  setSelectVal('f-year', p.year || '2nd Year');
+  setValue('f-cgpa', p.cgpa || '');
+  setValue('f-certs', p.certs || '');
+  setValue('f-projects', p.projects || '');
+  userSkills = p.skills ? [...p.skills] : [];
+  renderSkills();
+  buildGhInputs(p.githubUrls || ['', '', '']);
+
+  // Auto-save on change
+  ['f-name','f-role','f-degree','f-year','f-cgpa','f-certs','f-projects'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', () => autoSave());
+  });
+
+  // Scroll-based effects — on the student view element itself
+  const studentView = document.getElementById('v-student');
+  studentView.addEventListener('scroll', onStudentScroll);
+
+  // Reveal observer
+  setupRevealObserver(studentView);
+
+  if (user.analysis) renderResults(user.analysis);
+}
+
+function onStudentScroll() {
+  const sv = document.getElementById('v-student');
+  const scrollY = sv.scrollTop;
+  const total = sv.scrollHeight - sv.clientHeight;
+  // Progress bar
+  document.getElementById('scroll-progress').style.width = (scrollY / total * 100) + '%';
+  // Nav blur
+  document.getElementById('app-nav').classList.toggle('scrolled', scrollY > 60);
+  // Hero parallax
+  const hero = document.querySelector('.hero-content');
+  const heroSec = document.getElementById('sec-hero');
+  if (hero && scrollY < heroSec.offsetHeight) {
+    const pct = scrollY / heroSec.offsetHeight;
+    hero.style.transform = `translateY(${scrollY * 0.28}px)`;
+    hero.style.opacity = 1 - pct * 1.6;
+  }
+}
+
+function setupRevealObserver(root) {
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.1, root: root instanceof HTMLElement && root.id === 'v-student' ? root : null });
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+}
+
+function scrollToId(id) {
+  const sv = document.getElementById('v-student');
+  const el = document.getElementById(id);
+  if (sv && el) sv.scrollTo({ top: el.offsetTop - 70, behavior: 'smooth' });
+}
+
+function setValue(id, val) { const el = document.getElementById(id); if (el) el.value = val; }
+function setSelectVal(id, val) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  for (let o of el.options) { if (o.value === val || o.textContent === val) { el.value = o.value; break; } }
+}
+
+function renderSkills() {
+  const c = document.getElementById('skills-container');
+  if (!c) return;
+  c.innerHTML = userSkills.map((s, i) => `<div class="skill-tag" onclick="removeSkill(${i})">${s} <span style="opacity:.6">×</span></div>`).join('');
+}
+function removeSkill(i) { userSkills.splice(i, 1); renderSkills(); autoSave(); }
+
+document.addEventListener('keydown', e => {
+  if (e.target && e.target.id === 'f-skill-input' && e.key === 'Enter' && e.target.value.trim()) {
+    userSkills.push(e.target.value.trim().toLowerCase());
+    e.target.value = '';
+    renderSkills();
+    autoSave();
+  }
+});
+
+function buildGhInputs(urls) {
+  const wrap = document.getElementById('gh-repos-wrap');
+  if (!wrap) return;
+  wrap.innerHTML = [0, 1, 2].map(i => `
+    <div style="margin-top:${i ? 10 : 0}px">
+      <div class="gh-row">
+        <input class="gh-inp" type="url" id="gh-url-${i+1}" placeholder="https://github.com/username/repo${i > 0 ? ' (optional)' : ''}" value="${urls[i] || ''}">
+        <button class="gh-btn" onclick="analyzeRepo(${i+1})">⚡ Analyze</button>
+      </div>
+      <div class="gh-loading" id="gh-load-${i+1}">
+        <div class="spinner"></div>
+        <div><div style="margin-bottom:5px">Scanning repository…</div>
+        <div class="p-steps">
+          <div class="p-step act" id="ps-${i+1}-1">Fetching repo metadata</div>
+          <div class="p-step" id="ps-${i+1}-2">Detecting languages &amp; frameworks</div>
+          <div class="p-step" id="ps-${i+1}-3">Analyzing commit activity</div>
+          <div class="p-step" id="ps-${i+1}-4">Reading README &amp; description</div>
+          <div class="p-step" id="ps-${i+1}-5">Scoring code quality</div>
+        </div></div>
+      </div>
+      <div class="gh-result" id="gh-result-${i+1}"></div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// AUTO-SAVE
+// ═══════════════════════════════════════════════════════
+let saveTimer = null;
+function autoSave() { clearTimeout(saveTimer); saveTimer = setTimeout(() => saveProfile(true), 900); }
+
+async function saveProfile(showToast) {
+  const sess = getSession();
+  if (!sess || sess.type !== 'student') return;
+  const ghUrls = [1, 2, 3].map(i => document.getElementById(`gh-url-${i}`)?.value || '');
+  const profile = {
+    name: document.getElementById('f-name')?.value || '',
+    role: document.getElementById('f-role')?.value || 'Full Stack Developer',
+    degree: document.getElementById('f-degree')?.value || '',
+    year: document.getElementById('f-year')?.value || '',
+    cgpa: document.getElementById('f-cgpa')?.value || '',
+    skills: [...userSkills],
+    certs: document.getElementById('f-certs')?.value || '',
+    projects: document.getElementById('f-projects')?.value || '',
+    githubUrls: ghUrls,
+  };
+
+  // Save to Supabase if configured
+  if (isConfigured() && sb && sess.id) {
+    try {
+      await sb.from('profiles').upsert({ id: sess.id, email: sess.email, name: profile.name, role: 'student', profile_data: profile, updated_at: new Date().toISOString() });
+    } catch(e) { /* fallthrough to local */ }
+  }
+
+  // Always save locally too as backup
+  const students = LS.get('students') || [];
+  const idx = students.findIndex(s => s.email === sess.email);
+  if (idx >= 0) { students[idx].profile = profile; LS.set('students', students); }
+  else { students.push({ email: sess.email, name: sess.name, pass: 'x', profile, analysis: null, status: 'active' }); LS.set('students', students); }
+
+  if (showToast) { const t = document.getElementById('saved-toast'); t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2600); }
+}
+
+// ═══════════════════════════════════════════════════════
+// GITHUB ANALYSIS
+// ═══════════════════════════════════════════════════════
+const MOCK_REPOS = {
+  1: { name: 'main-project', commits: 68, languages: ['JavaScript', 'HTML', 'CSS', 'JSX'], frameworks: ['React', 'Express.js'], quality: 72, boost: 5, insights: 'MERN stack architecture detected with React hooks and context API. Express REST endpoints visible. No test files — add Jest for quality signal. Missing deployment docs in README.' },
+  2: { name: 'frontend-clone', commits: 34, languages: ['HTML', 'CSS', 'JavaScript'], frameworks: ['Vanilla JS'], quality: 48, boost: 2, insights: 'Clean HTML/CSS with Flexbox & Grid. Raw DOM skill visible. Add a README with screenshots to make it recruiter-ready.' },
+  3: { name: 'api-project', commits: 25, languages: ['JavaScript', 'HTML', 'CSS'], frameworks: ['Fetch API'], quality: 61, boost: 1, insights: 'Async/await API integration patterns detected. Shows 3rd-party API skills. Add error handling & loading states for better UX demo.' }
+};
+let ghScoreBoost = 0;
+
+async function analyzeRepo(num) {
+  const urlEl = document.getElementById(`gh-url-${num}`);
+  const url = urlEl?.value?.trim() || '';
+  if (!url || !url.includes('github.com')) {
+    urlEl.style.borderColor = 'rgba(255,79,106,.5)';
+    setTimeout(() => urlEl.style.borderColor = '', 2200);
+    return;
+  }
+  autoSave();
+  const loading = document.getElementById(`gh-load-${num}`);
+  const result = document.getElementById(`gh-result-${num}`);
+  loading.classList.add('show');
+  result.classList.remove('show');
+
+  for (let s = 1; s <= 5; s++) {
+    await new Promise(r => setTimeout(r, s === 1 ? 0 : 800));
+    const prev = document.getElementById(`ps-${num}-${s - 1}`);
+    const curr = document.getElementById(`ps-${num}-${s}`);
+    if (prev) { prev.classList.remove('act'); prev.classList.add('done'); }
+    if (curr) curr.classList.add('act');
+  }
+  await new Promise(r => setTimeout(r, 500));
+  for (let s = 1; s <= 5; s++) { const el = document.getElementById(`ps-${num}-${s}`); if (el) { el.classList.remove('act'); el.classList.add('done'); } }
+  await new Promise(r => setTimeout(r, 200));
+  loading.classList.remove('show');
+  // Reset steps
+  for (let s = 1; s <= 5; s++) { const el = document.getElementById(`ps-${num}-${s}`); if (el) { el.classList.remove('done', 'act'); if (s === 1) el.classList.add('act'); } }
+
+  const data = MOCK_REPOS[num] || MOCK_REPOS[1];
+  ghScoreBoost = Math.min(ghScoreBoost + data.boost, 15);
+  const qc = data.quality >= 70 ? 'var(--green)' : data.quality >= 50 ? 'var(--amber)' : 'var(--red)';
+  result.innerHTML = `
+    <div class="gh-r-hdr">
+      <div class="gh-r-title"><div class="gh-r-dot"></div>${data.name}</div>
+      <span class="mono-tag green-tag" style="font-size:10px">Quality: ${data.quality}/100</span>
+    </div>
+    <div class="gh-stats-g">
+      <div class="gh-stat"><div class="gh-s-val" style="color:var(--purple-b)">${data.commits}</div><div class="gh-s-lbl">Commits</div></div>
+      <div class="gh-stat"><div class="gh-s-val" style="color:var(--blue)">${data.languages.length}</div><div class="gh-s-lbl">Languages</div></div>
+      <div class="gh-stat"><div class="gh-s-val" style="color:var(--amber)">${data.frameworks.length}</div><div class="gh-s-lbl">Frameworks</div></div>
+      <div class="gh-stat"><div class="gh-s-val" style="color:${qc}">${data.quality}</div><div class="gh-s-lbl">Quality</div></div>
+    </div>
+    <div class="gh-langs">${data.languages.map(l => `<div class="gl-tag">${l}</div>`).join('')}${data.frameworks.map(f => `<div class="gl-tag" style="background:rgba(124,92,252,.1);border-color:rgba(124,92,252,.25);color:var(--purple-b)">${f}</div>`).join('')}</div>
+    <div class="gh-insights"><strong>AI Insights:</strong> ${data.insights} <strong style="color:var(--green)">+${data.boost} pts boost applied.</strong></div>`;
+  result.classList.add('show');
+}
+
+// ═══════════════════════════════════════════════════════
+// ANALYSIS ENGINE
+// ═══════════════════════════════════════════════════════
+const ROLE_DATA = {
+  'Full Stack Developer': {
+    needed: ['javascript', 'node.js', 'react', 'mongodb', 'git', 'express'],
+    weeks: 24,
+    companies: ['Amazon', 'TCS', 'Infosys', 'Atlassian'],
+    alts: [
+      { role: 'Frontend Developer', pct: 85, sal: '₹5L–₹10L', desc: 'React & CSS skills already qualify. Fastest path.' },
+      { role: 'Backend Developer', pct: 80, sal: '₹5.5L–₹11L', desc: 'Add depth in Node.js + databases.' },
+      { role: 'DevOps Engineer', pct: 65, sal: '₹7L–₹16L', desc: 'Good transition if you enjoy infra & tooling.' }
+    ],
+    proj: [
+      { t: 'Full Stack Portfolio', d: 'MERN stack with auth, real-time features & deployment.', tags: ['React', 'Node.js', 'MongoDB'] },
+      { t: 'Real-Time Chat App', d: 'Socket.io + Express backend. Async expertise proof.', tags: ['Socket.io', 'Express', 'React'] }
+    ]
+  },
+  'Frontend Developer': {
+    needed: ['javascript', 'react', 'typescript', 'css', 'html', 'jest'],
+    weeks: 16,
+    companies: ['Flipkart', 'Razorpay', 'Swiggy', 'Atlassian'],
+    alts: [
+      { role: 'UI/UX Designer', pct: 90, sal: '₹5L–₹11L', desc: 'Near-perfect match if you love design & UX.' },
+      { role: 'Full Stack Developer', pct: 70, sal: '₹6L–₹14L', desc: 'Add Node.js + databases to go full stack.' },
+      { role: 'Mobile App Developer', pct: 65, sal: '₹6L–₹13L', desc: 'Frontend skills transfer well to React Native/Flutter.' }
+    ],
+    proj: [
+      { t: 'Design System', d: 'Component library in React + Storybook + TypeScript.', tags: ['React', 'TypeScript', 'Storybook'] },
+      { t: 'Analytics Dashboard', d: 'Data viz with Chart.js, filters, exports.', tags: ['React', 'Chart.js', 'CSS'] }
+    ]
+  },
+  'Backend Developer': {
+    needed: ['node.js', 'postgresql', 'rest apis', 'docker', 'redis', 'testing'],
+    weeks: 20,
+    companies: ['Razorpay', 'PhonePe', 'CRED', 'Amazon'],
+    alts: [
+      { role: 'Full Stack Developer', pct: 75, sal: '₹6L–₹14L', desc: 'Add React or another frontend to go full stack.' },
+      { role: 'DevOps Engineer', pct: 70, sal: '₹7L–₹16L', desc: 'Strong fit if you enjoy infra, CI/CD & reliability.' },
+      { role: 'Cloud Engineer', pct: 65, sal: '₹7L–₹15L', desc: 'APIs + infra knowledge make cloud work natural.' }
+    ],
+    proj: [
+      { t: 'REST API Service', d: 'Auth, CRUD, rate limiting, Swagger docs.', tags: ['Node.js', 'PostgreSQL', 'Docker'] },
+      { t: 'Microservices Demo', d: 'Two services communicating via Redis.', tags: ['Express', 'Redis', 'Docker'] }
+    ]
+  },
+  'Data Scientist': {
+    needed: ['machine learning', 'tensorflow', 'sklearn', 'data visualization', 'statistics', 'sql'],
+    weeks: 32,
+    companies: ['Fractal', 'Mu Sigma', 'Amazon', 'Google'],
+    alts: [
+      { role: 'Data Analyst', pct: 90, sal: '₹4L–₹9L', desc: 'Excellent match if you enjoy SQL + dashboards.' },
+      { role: 'ML Engineer', pct: 70, sal: '₹8L–₹18L', desc: 'Move here after solid ML foundations + deployment.' },
+      { role: 'Business Analyst', pct: 65, sal: '₹4.5L–₹10L', desc: 'Good fit if you enjoy business storytelling with data.' }
+    ],
+    proj: [
+      { t: 'ML Pipeline', d: 'EDA → model → evaluation → deployment.', tags: ['Python', 'scikit-learn', 'Pandas'] },
+      { t: 'Data Dashboard', d: 'Interactive Streamlit story with real dataset.', tags: ['Python', 'Plotly', 'SQL'] }
+    ]
+  },
+  'ML Engineer': {
+    needed: ['deep learning', 'pytorch', 'mlops', 'docker', 'cloud ml', 'experiment tracking'],
+    weeks: 36,
+    companies: ['Google', 'Microsoft', 'Amazon', 'Fractal'],
+    alts: [
+      { role: 'Data Scientist', pct: 80, sal: '₹6L–₹14L', desc: 'Closer to analytics-heavy ML roles.' },
+      { role: 'AI Researcher', pct: 65, sal: '₹10L–₹25L', desc: 'Move here after strong math + deep learning depth.' },
+      { role: 'Data Engineer', pct: 60, sal: '₹7L–₹18L', desc: 'Great fit if you enjoy data pipelines & infra.' }
+    ],
+    proj: [
+      { t: 'Deep Learning Project', d: 'Image classification or NLP with PyTorch.', tags: ['PyTorch', 'Python', 'Docker'] },
+      { t: 'MLOps Pipeline', d: 'Training → serving with MLflow.', tags: ['MLflow', 'FastAPI', 'Docker'] }
+    ]
+  },
+  'DevOps Engineer': {
+    needed: ['kubernetes', 'ci/cd', 'terraform', 'aws', 'ansible', 'monitoring'],
+    weeks: 28,
+    companies: ['Infosys', 'Wipro', 'ThoughtWorks', 'Amazon'],
+    alts: [
+      { role: 'Cloud Engineer', pct: 85, sal: '₹7L–₹16L', desc: 'Very close match around infra & automation.' },
+      { role: 'Site Reliability Engineer', pct: 70, sal: '₹9L–₹20L', desc: 'Add observability, SLOs and incident response.' },
+      { role: 'Backend Developer', pct: 60, sal: '₹5.5L–₹11L', desc: 'Good path if you want to write more product code.' }
+    ],
+    proj: [
+      { t: 'K8s Cluster', d: 'Deploy a microservices app on Kubernetes.', tags: ['Kubernetes', 'Docker', 'Helm'] },
+      { t: 'CI/CD Pipeline', d: 'GitHub Actions → Docker → auto-deploy.', tags: ['GitHub Actions', 'Docker', 'Terraform'] }
+    ]
+  },
+  'Data Analyst': {
+    needed: ['sql', 'excel', 'tableau', 'power bi', 'statistics', 'python'],
+    weeks: 20,
+    companies: ['Deloitte', 'KPMG', 'Accenture', 'Fractal'],
+    alts: [
+      { role: 'Data Scientist', pct: 75, sal: '₹6L–₹14L', desc: 'Natural next step with more ML depth.' },
+      { role: 'Business Analyst', pct: 80, sal: '₹4.5L–₹10L', desc: 'Great fit if you enjoy stakeholder work.' },
+      { role: 'Product Manager', pct: 60, sal: '₹7L–₹18L', desc: 'Helpful if you like data-informed product decisions.' }
+    ],
+    proj: [
+      { t: 'Company KPI Dashboard', d: 'End-to-end BI dashboard for a domain you like.', tags: ['SQL', 'Tableau', 'Power BI'] },
+      { t: 'Cohort Analysis', d: 'User retention or sales analysis over time.', tags: ['Excel', 'Python', 'Statistics'] }
+    ]
+  },
+  'Cloud Engineer': {
+    needed: ['aws', 'gcp', 'azure', 'linux', 'networking', 'terraform'],
+    weeks: 28,
+    companies: ['AWS', 'Google Cloud', 'Microsoft', 'Accenture'],
+    alts: [
+      { role: 'DevOps Engineer', pct: 80, sal: '₹7L–₹16L', desc: 'Strong overlap in tooling & infra.' },
+      { role: 'Site Reliability Engineer', pct: 65, sal: '₹9L–₹20L', desc: 'Good if you enjoy reliability & monitoring.' },
+      { role: 'Backend Developer', pct: 55, sal: '₹5.5L–₹11L', desc: 'Move here if you want to write more app code.' }
+    ],
+    proj: [
+      { t: 'Multi-Tier Cloud App', d: 'Deploy a web app on cloud with DB, autoscaling.', tags: ['AWS', 'Terraform', 'Linux'] },
+      { t: 'Cost-Optimised Architecture', d: 'Design low-cost but scalable architecture.', tags: ['AWS', 'Architecture', 'Monitoring'] }
+    ]
+  },
+  'Cybersecurity Analyst': {
+    needed: ['network security', 'linux', 'osint', 'siem', 'threat modeling', 'scripting'],
+    weeks: 30,
+    companies: ['Palo Alto Networks', 'CrowdStrike', 'EY', 'IBM'],
+    alts: [
+      { role: 'Network Engineer', pct: 80, sal: '₹5L–₹11L', desc: 'Good if you enjoy core network design.' },
+      { role: 'DevSecOps Engineer', pct: 70, sal: '₹7L–₹16L', desc: 'Blends security with CI/CD & cloud.' },
+      { role: 'IT Support Specialist', pct: 65, sal: '₹3L–₹7L', desc: 'Entry path into infra & security.' }
+    ],
+    proj: [
+      { t: 'Home Lab & Vulnerability Scan', d: 'Set up a vulnerable app and practice scanning & hardening.', tags: ['Kali Linux', 'OWASP', 'Nmap'] },
+      { t: 'Security Monitoring Dashboard', d: 'Simulate SIEM-like dashboards with logs.', tags: ['ELK', 'Linux', 'Networking'] }
+    ]
+  },
+  'Mobile App Developer': {
+    needed: ['dart or javascript', 'flutter or react native', 'state management', 'api integration', 'ui design'],
+    weeks: 24,
+    companies: ['Swiggy', 'Zomato', 'Uber', 'Ola'],
+    alts: [
+      { role: 'Frontend Developer', pct: 80, sal: '₹5L–₹10L', desc: 'Frontend skills transfer directly to web.' },
+      { role: 'UI/UX Designer', pct: 70, sal: '₹5L–₹11L', desc: 'Great if you love mobile UX & visuals.' },
+      { role: 'Full Stack Developer', pct: 60, sal: '₹6L–₹14L', desc: 'Add backend to ship end-to-end products.' }
+    ],
+    proj: [
+      { t: 'Multi-Screen Mobile App', d: 'End-to-end app with auth, offline support, and API.', tags: ['Flutter', 'Firebase', 'REST APIs'] },
+      { t: 'Clone App', d: 'Clone a popular app (e.g. Spotify, Instagram) with fewer features.', tags: ['React Native', 'UI/UX', 'Animations'] }
+    ]
+  },
+  'UI/UX Designer': {
+    needed: ['figma', 'design systems', 'ux research', 'prototyping', 'accessibility'],
+    weeks: 20,
+    companies: ['Google', 'Swiggy', 'Razorpay', 'Atlassian'],
+    alts: [
+      { role: 'Frontend Developer', pct: 75, sal: '₹5L–₹10L', desc: 'Add HTML/CSS/JS to implement your designs.' },
+      { role: 'Product Designer', pct: 80, sal: '₹6L–₹14L', desc: 'Combine UX with product strategy.' },
+      { role: 'Web Designer', pct: 85, sal: '₹4L–₹9L', desc: 'Good for more visual-heavy work.' }
+    ],
+    proj: [
+      { t: 'Portfolio Case Studies', d: '3–4 deep case studies for different products.', tags: ['Figma', 'UX Research', 'Prototyping'] },
+      { t: 'Design System', d: 'Tokens, components, and documentation.', tags: ['Design Systems', 'Figma', 'Accessibility'] }
+    ]
+  },
+  'Product Manager': {
+    needed: ['product thinking', 'roadmapping', 'analytics', 'stakeholder communication', 'wireframing'],
+    weeks: 26,
+    companies: ['Google', 'Microsoft', 'Razorpay', 'CRED'],
+    alts: [
+      { role: 'Business Analyst', pct: 80, sal: '₹4.5L–₹10L', desc: 'Great if you enjoy deep analysis & requirements.' },
+      { role: 'Growth Product Manager', pct: 70, sal: '₹6L–₹16L', desc: 'More focused on experiments and metrics.' },
+      { role: 'Founder / Early Employee', pct: 60, sal: 'Variable', desc: 'High-risk, high-learning path in startups.' }
+    ],
+    proj: [
+      { t: 'PRD + Wireframes', d: 'Write detailed PRD and wireframes for a feature.', tags: ['Product Spec', 'Wireframing', 'Metrics'] },
+      { t: 'Growth Experiment Doc', d: 'Design experiments to improve activation/retention.', tags: ['A/B Testing', 'Analytics', 'SQL'] }
+    ]
+  },
+  'Game Developer': {
+    needed: ['c#', 'c++', 'unity', 'unreal', 'game design', 'linear algebra'],
+    weeks: 24,
+    companies: ['Nazara', 'Ubisoft', 'EA', 'Zynga'],
+    alts: [
+      { role: 'AR/VR Developer', pct: 80, sal: '₹6L–₹14L', desc: 'Great if you enjoy immersive experiences & 3D.' },
+      { role: 'Graphics Programmer', pct: 70, sal: '₹7L–₹16L', desc: 'More low-level math & rendering focus.' },
+      { role: 'Full Stack Developer', pct: 55, sal: '₹6L–₹14L', desc: 'If you want to move into broader app dev.' }
+    ],
+    proj: [
+      { t: '2D/3D Platformer', d: 'End-to-end game with levels, scoring, and polish.', tags: ['Unity', 'C#', 'Game Design'] },
+      { t: 'Game Portfolio Reel', d: 'Showreel of 2–3 games with breakdowns.', tags: ['Unity', 'Unreal', 'C++'] }
+    ]
+  },
+  'QA Engineer': {
+    needed: ['manual testing', 'automation', 'selenium', 'jest', 'bug tracking'],
+    weeks: 18,
+    companies: ['TCS', 'Cognizant', 'Wipro', 'Capgemini'],
+    alts: [
+      { role: 'SDET', pct: 80, sal: '₹6L–₹14L', desc: 'Automation-heavy engineering testing roles.' },
+      { role: 'Backend Developer', pct: 55, sal: '₹5.5L–₹11L', desc: 'If you enjoy debugging and fixing code.' },
+      { role: 'Product Manager', pct: 50, sal: '₹7L–₹18L', desc: 'Translates QA insights into product improvements.' }
+    ],
+    proj: [
+      { t: 'Test Automation Suite', d: 'Automated tests for a sample web app.', tags: ['Selenium', 'Jest', 'CI/CD'] },
+      { t: 'Bug Report Portfolio', d: 'Well-written bug reports showcasing attention to detail.', tags: ['JIRA', 'QA', 'Documentation'] }
+    ]
+  },
+  'Business Analyst': {
+    needed: ['excel', 'sql', 'data analysis', 'presentation', 'domain knowledge'],
+    weeks: 20,
+    companies: ['Deloitte', 'EY', 'KPMG', 'Accenture'],
+    alts: [
+      { role: 'Data Analyst', pct: 85, sal: '₹4.5L–₹10L', desc: 'Closer to pure data & dashboards.' },
+      { role: 'Product Manager', pct: 70, sal: '₹7L–₹18L', desc: 'If you enjoy owning product outcomes.' },
+      { role: 'Consultant', pct: 65, sal: '₹7L–₹20L', desc: 'Client-facing, problem-solving heavy roles.' }
+    ],
+    proj: [
+      { t: 'Business Case Study', d: 'End-to-end analysis with recommendations.', tags: ['Excel', 'SQL', 'Presentation'] },
+      { t: 'Dashboard Story', d: 'Insightful dashboard for a business problem.', tags: ['Power BI', 'Storytelling', 'Analytics'] }
+    ]
+  },
+  'Data Engineer': {
+    needed: ['python', 'sql', 'etl', 'big data', 'spark', 'data warehousing'],
+    weeks: 28,
+    companies: ['Amazon', 'Google', 'Snowflake', 'TCS'],
+    alts: [
+      { role: 'ML Engineer', pct: 70, sal: '₹8L–₹18L', desc: 'Great if you want to move closer to models.' },
+      { role: 'Data Scientist', pct: 60, sal: '₹6L–₹14L', desc: 'More analysis & modeling work.' },
+      { role: 'Backend Developer', pct: 55, sal: '₹5.5L–₹11L', desc: 'If you enjoy services & APIs.' }
+    ],
+    proj: [
+      { t: 'ETL Pipeline', d: 'Batch or streaming pipeline from raw to analytics-ready.', tags: ['Airflow', 'Spark', 'SQL'] },
+      { t: 'Data Lake Project', d: 'Design and implement a small data lake.', tags: ['S3', 'Parquet', 'Glue'] }
+    ]
+  },
+  'Database Administrator': {
+    needed: ['sql', 'oracle', 'backup', 'performance tuning', 'security'],
+    weeks: 24,
+    companies: ['Oracle', 'IBM', 'TCS', 'Infosys'],
+    alts: [
+      { role: 'Data Engineer', pct: 70, sal: '₹7L–₹16L', desc: 'Move into broader data pipelines & infra.' },
+      { role: 'Backend Developer', pct: 55, sal: '₹5.5L–₹11L', desc: 'Database-heavy application roles.' },
+      { role: 'Cloud Engineer', pct: 55, sal: '₹7L–₹15L', desc: 'Managed databases & cloud services.' }
+    ],
+    proj: [
+      { t: 'DB Performance Lab', d: 'Tuning indexes, queries, and schema.', tags: ['PostgreSQL', 'Indexes', 'Explain'] },
+      { t: 'Backup & Recovery Plan', d: 'Design and document robust backup strategy.', tags: ['Backups', 'High Availability', 'Security'] }
+    ]
+  },
+  'Blockchain Developer': {
+    needed: ['solidity', 'ethereum', 'smart contracts', 'web3.js', 'cryptography'],
+    weeks: 30,
+    companies: ['Polygon', 'CoinDCX', 'WazirX', 'Tata Consultancy'],
+    alts: [
+      { role: 'Backend Developer', pct: 70, sal: '₹6L–₹14L', desc: 'APIs & services for web3 apps.' },
+      { role: 'Security Engineer', pct: 65, sal: '₹7L–₹18L', desc: 'Smart contract audits and security.' },
+      { role: 'DeFi Engineer', pct: 60, sal: '₹8L–₹22L', desc: 'Specialised in financial protocols.' }
+    ],
+    proj: [
+      { t: 'Token & DApp', d: 'ERC-20 token plus a simple DApp.', tags: ['Solidity', 'Web3.js', 'Ethereum'] },
+      { t: 'NFT or DeFi Prototype', d: 'Experiment with NFTs or lending protocol.', tags: ['Smart Contracts', 'Security', 'UI'] }
+    ]
+  },
+  'Embedded Systems Engineer': {
+    needed: ['c', 'c++', 'microcontrollers', 'rtos', 'pcb design'],
+    weeks: 30,
+    companies: ['Bosch', 'Siemens', 'Honeywell', 'Tata Elxsi'],
+    alts: [
+      { role: 'Robotics Engineer', pct: 80, sal: '₹8L–₹17L', desc: 'Robotics is a natural extension of embedded.' },
+      { role: 'IoT Engineer', pct: 75, sal: '₹6L–₹14L', desc: 'Connected devices & cloud dashboards.' },
+      { role: 'Hardware Design Engineer', pct: 65, sal: '₹7L–₹16L', desc: 'More PCB and electronics focused.' }
+    ],
+    proj: [
+      { t: 'Microcontroller Project', d: 'Sensor-based system with real-time constraints.', tags: ['C', 'Microcontroller', 'RTOS'] },
+      { t: 'IoT Prototype', d: 'Device that sends data to a cloud dashboard.', tags: ['ESP32', 'MQTT', 'PCB'] }
+    ]
+  },
+  'AR/VR Developer': {
+    needed: ['unity', 'c#', '3d modeling', 'arkit', 'arcore'],
+    weeks: 28,
+    companies: ['TCS', 'Accenture', 'Infosys', 'Zynga'],
+    alts: [
+      { role: 'Game Developer', pct: 85, sal: '₹6L–₹14L', desc: 'Very close overlap in tools & skills.' },
+      { role: 'UI/UX Designer', pct: 60, sal: '₹5L–₹11L', desc: 'If you enjoy interaction and experience design.' },
+      { role: '3D Artist', pct: 55, sal: '₹4L–₹10L', desc: 'More focus on art and modeling.' }
+    ],
+    proj: [
+      { t: 'AR Experience', d: 'Mobile AR app with interactions and animations.', tags: ['Unity', 'ARCore', 'C#'] },
+      { t: 'VR Demo', d: 'Immersive VR scene with basic gameplay.', tags: ['Unity', 'VR', '3D Models'] }
+    ]
+  },
+  'AI Researcher': {
+    needed: ['deep learning', 'python', 'research', 'paper writing', 'pytorch'],
+    weeks: 40,
+    companies: ['Google', 'OpenAI', 'Microsoft', 'IBM'],
+    alts: [
+      { role: 'ML Engineer', pct: 80, sal: '₹8L–₹18L', desc: 'Applied ML and deployment roles.' },
+      { role: 'Data Scientist', pct: 70, sal: '₹6L–₹14L', desc: 'Industry analytics and modeling.' },
+      { role: 'Academic Researcher', pct: 65, sal: 'Varies', desc: 'PhD or university research positions.' }
+    ],
+    proj: [
+      { t: 'Research Reproduction', d: 'Reproduce results from a research paper.', tags: ['PyTorch', 'Experimentation', 'Writing'] },
+      { t: 'Novel Model Experiment', d: 'Tweak an existing model and document outcomes.', tags: ['Deep Learning', 'Python', 'Reporting'] }
+    ]
+  },
+  'Network Engineer': {
+    needed: ['networking', 'cisco', 'routing', 'switching', 'firewalls'],
+    weeks: 24,
+    companies: ['Cisco', 'Juniper', 'Airtel', 'Reliance Jio'],
+    alts: [
+      { role: 'Cybersecurity Analyst', pct: 80, sal: '₹6L–₹15L', desc: 'Security is a natural next layer.' },
+      { role: 'Cloud Engineer', pct: 65, sal: '₹7L–₹15L', desc: 'Networking skills extend to cloud VPCs.' },
+      { role: 'DevOps Engineer', pct: 55, sal: '₹7L–₹16L', desc: 'Infra and pipelines with network awareness.' }
+    ],
+    proj: [
+      { t: 'Home Lab Network', d: 'Configure routers, switches, and VLANs.', tags: ['Cisco', 'Routing', 'Switching'] },
+      { t: 'Network Monitoring Setup', d: 'Deploy tools to monitor traffic & health.', tags: ['Wireshark', 'SNMP', 'Dashboard'] }
+    ]
+  },
+  'Robotics Engineer': {
+    needed: ['robotics', 'c++', 'python', 'ros', 'sensors'],
+    weeks: 32,
+    companies: ['ABB', 'Tata Motors', 'ISRO', 'Bharat Electronics'],
+    alts: [
+      { role: 'Embedded Systems Engineer', pct: 80, sal: '₹8L–₹17L', desc: 'Deep overlap in hardware & control.' },
+      { role: 'ML Engineer', pct: 60, sal: '₹8L–₹18L', desc: 'Perception and control with ML.' },
+      { role: 'Research Engineer', pct: 60, sal: '₹8L–₹20L', desc: 'Lab or R&D focused work.' }
+    ],
+    proj: [
+      { t: 'Autonomous Robot', d: 'Line-following or obstacle-avoiding robot.', tags: ['Arduino', 'Sensors', 'Control'] },
+      { t: 'ROS Project', d: 'Simple navigation or arm-control stack.', tags: ['ROS', 'C++', 'Python'] }
+    ]
+  },
+  'Web Designer': {
+    needed: ['html', 'css', 'photoshop', 'illustrator', 'ui design'],
+    weeks: 18,
+    companies: ['Wix', 'Zoho', 'Freshworks', 'Adobe'],
+    alts: [
+      { role: 'UI/UX Designer', pct: 80, sal: '₹5L–₹11L', desc: 'If you like UX research & flows.' },
+      { role: 'Frontend Developer', pct: 70, sal: '₹5L–₹10L', desc: 'Add JavaScript to implement designs.' },
+      { role: 'Graphic Designer', pct: 65, sal: '₹4L–₹9L', desc: 'More emphasis on branding and visuals.' }
+    ],
+    proj: [
+      { t: 'Landing Page Collection', d: 'Set of modern responsive landing pages.', tags: ['HTML', 'CSS', 'Responsive Design'] },
+      { t: 'Brand Website', d: 'Website with consistent brand identity.', tags: ['Design', 'UI', 'Accessibility'] }
+    ]
+  },
+  'SEO Specialist': {
+    needed: ['seo', 'google analytics', 'content', 'link building', 'keyword research'],
+    weeks: 18,
+    companies: ['Zomato', 'Swiggy', 'CRED', 'Freshworks'],
+    alts: [
+      { role: 'Digital Marketing Analyst', pct: 85, sal: '₹4L–₹10L', desc: 'Broader performance marketing roles.' },
+      { role: 'Content Marketer', pct: 75, sal: '₹3.5L–₹9L', desc: 'More focus on content & storytelling.' },
+      { role: 'Product Growth Analyst', pct: 60, sal: '₹6L–₹15L', desc: 'Data-driven product growth work.' }
+    ],
+    proj: [
+      { t: 'SEO Case Study', d: 'Before/after SEO improvements for a site.', tags: ['On-Page SEO', 'Off-Page', 'Analytics'] },
+      { t: 'Keyword Strategy Doc', d: 'End-to-end strategy for a niche.', tags: ['Keywords', 'Content Plan', 'Backlinks'] }
+    ]
+  },
+  'Digital Marketing Analyst': {
+    needed: ['digital marketing', 'google ads', 'seo', 'analytics', 'content'],
+    weeks: 20,
+    companies: ['CRED', 'Zomato', 'Swiggy', 'Paytm'],
+    alts: [
+      { role: 'SEO Specialist', pct: 80, sal: '₹3.5L–₹9L', desc: 'Focus more on organic search.' },
+      { role: 'Growth Marketer', pct: 70, sal: '₹5L–₹12L', desc: 'Experiment-heavy growth work.' },
+      { role: 'Product Marketing Manager', pct: 60, sal: '₹8L–₹18L', desc: 'Positioning and go-to-market.' }
+    ],
+    proj: [
+      { t: 'Campaign Analysis', d: 'Deep-dive on a paid or organic campaign.', tags: ['Google Ads', 'Analytics', 'Reporting'] },
+      { t: 'Marketing Funnel Dashboard', d: 'Visualise acquisition → activation → retention.', tags: ['Funnel', 'Dashboards', 'SQL'] }
+    ]
+  },
+  'Content Creator': {
+    needed: ['video editing', 'writing', 'social media', 'branding', 'creativity'],
+    weeks: 16,
+    companies: ['YouTube', 'Instagram', 'LinkedIn', 'Medium'],
+    alts: [
+      { role: 'Social Media Manager', pct: 80, sal: '₹3.5L–₹9L', desc: 'Own brand presence across platforms.' },
+      { role: 'Content Marketer', pct: 75, sal: '₹4L–₹10L', desc: 'Blend storytelling with marketing goals.' },
+      { role: 'Technical Writer', pct: 55, sal: '₹4L–₹9L', desc: 'If you enjoy structured, instructional content.' }
+    ],
+    proj: [
+      { t: 'Channel or Page', d: 'Consistent uploads and engagement for 3+ months.', tags: ['YouTube', 'Instagram', 'Branding'] },
+      { t: 'Content Series', d: 'Deep content series on one topic.', tags: ['Writing', 'Storytelling', 'Visuals'] }
+    ]
+  },
+  'Technical Writer': {
+    needed: ['writing', 'documentation', 'apis', 'markdown', 'research'],
+    weeks: 18,
+    companies: ['Red Hat', 'Zoho', 'Freshworks', 'Oracle'],
+    alts: [
+      { role: 'Developer Advocate', pct: 70, sal: '₹7L–₹18L', desc: 'Blend writing, speaking, and coding.' },
+      { role: 'Content Creator', pct: 70, sal: '₹3.5L–₹9L', desc: 'More creative, less formal writing.' },
+      { role: 'Product Manager', pct: 55, sal: '₹7L–₹18L', desc: 'If you enjoy explaining products & features.' }
+    ],
+    proj: [
+      { t: 'API Documentation Pack', d: 'Docs for an open API or your own project.', tags: ['OpenAPI', 'Markdown', 'Examples'] },
+      { t: 'How-To Article Series', d: 'Step-by-step tutorials with screenshots.', tags: ['Docs', 'Guides', 'DX'] }
+    ]
+  },
+  'IT Support Specialist': {
+    needed: ['troubleshooting', 'windows', 'linux', 'customer service', 'networking'],
+    weeks: 16,
+    companies: ['Wipro', 'TCS', 'Infosys', 'Dell'],
+    alts: [
+      { role: 'Network Engineer', pct: 70, sal: '₹5L–₹11L', desc: 'Move deeper into networking.' },
+      { role: 'SysAdmin', pct: 70, sal: '₹5.5L–₹12L', desc: 'Servers, scripts, and infra.' },
+      { role: 'Cybersecurity Analyst', pct: 60, sal: '₹6L–₹15L', desc: 'Security-oriented infra roles.' }
+    ],
+    proj: [
+      { t: 'IT Helpdesk Lab', d: 'Ticket-style troubleshooting scenarios.', tags: ['Windows', 'Linux', 'Networking'] },
+      { t: 'Home Lab Setup', d: 'Small network with backup and monitoring.', tags: ['Servers', 'Backups', 'Docs'] }
+    ]
+  },
+  'Other': {
+    needed: ['communication', 'adaptability', 'learning'],
+    weeks: 12,
+    companies: ['Various'],
+    alts: [
+      { role: 'Full Stack Developer', pct: 40, sal: '₹6L–₹14L', desc: 'One generalist path you can grow into.' },
+      { role: 'Data Analyst', pct: 40, sal: '₹4.5L–₹10L', desc: 'If you enjoy working with data.' },
+      { role: 'Product Manager', pct: 40, sal: '₹7L–₹18L', desc: 'If you like coordinating people and ideas.' }
+    ],
+    proj: [
+      { t: 'Personal Portfolio', d: 'Showcase skills, projects, and learning journey.', tags: ['Portfolio', 'Storytelling', 'Brand'] },
+      { t: 'Learning Log', d: 'Document your learning for 90 days.', tags: ['Consistency', 'Reflection', 'Writing'] }
+    ]
+  }
+};
+
+function makeAnalysis(name, role, skills, boost) {
+  const rd = ROLE_DATA[role] || ROLE_DATA['Full Stack Developer'];
+  const missing = rd.needed.filter(n => !skills.some(s => s.toLowerCase().includes(n.split(' ')[0])));
+  const have = rd.needed.filter(n => skills.some(s => s.toLowerCase().includes(n.split(' ')[0])));
+  const raw = Math.round((have.length / rd.needed.length) * 100);
+  const score = Math.min(100, raw + boost);
+  return {
+    name, role, score, weeks: rd.weeks, ghBoost: boost,
+    gaps: missing.slice(0, 4).map((g, i) => ({ name: g, level: i === 0 ? 'CRITICAL' : i === 1 ? 'HIGH' : 'MEDIUM' })),
+    strengths: [...skills.slice(0, 5).map(s => ({ name: s, src: 'profile' })), ...(boost > 0 ? [{ name: 'commit consistency', src: 'github' }] : [])],
+    companies: rd.companies, alts: rd.alts, proj: rd.proj
+  };
+}
+
+async function analyzeAndShowResults() {
+  await saveProfile(false);
+  const sess = getSession();
+  if (!sess) return;
+  const name = document.getElementById('f-name')?.value || sess.name;
+  const role = document.getElementById('f-role')?.value || 'Full Stack Developer';
+  const analysis = makeAnalysis(name, role, userSkills, ghScoreBoost);
+
+  // Save analysis
+  if (isConfigured() && sb && sess.id) {
+    try { await sb.from('profiles').upsert({ id: sess.id, analysis, status: 'active', updated_at: new Date().toISOString() }); } catch(e) {}
+  }
+  const students = LS.get('students') || [];
+  const idx = students.findIndex(s => s.email === sess.email);
+  if (idx >= 0) { students[idx].analysis = analysis; students[idx].status = 'active'; LS.set('students', students); }
+
+  renderResults(analysis);
+  setTimeout(() => scrollToId('sec-results'), 200);
+}
+
+function renderResults(a) {
+  const sc = a.score >= 80 ? 'var(--green)' : a.score >= 50 ? 'var(--amber)' : 'var(--red)';
+  const circ = 239 - (a.score / 100) * 239;
+  const html = `
+    <div class="result-hero-card reveal">
+      <div class="score-ring">
+        <svg width="96" height="96" viewBox="0 0 96 96" style="transform:rotate(-90deg)">
+          <circle cx="48" cy="48" r="38" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="7"/>
+          <circle id="res-circle" cx="48" cy="48" r="38" fill="none" stroke="${sc}" stroke-width="7"
+            stroke-dasharray="239" stroke-dashoffset="239" stroke-linecap="round"
+            style="transition:stroke-dashoffset 2s cubic-bezier(.4,0,.2,1) .5s"/>
+        </svg>
+        <div class="score-txt"><div class="sn" style="color:${sc}">${a.score}</div><div class="sl">SCORE</div></div>
+      </div>
+      <div class="r-info">
+        <div class="r-name">${a.name} → ${a.role}</div>
+        <div class="r-desc">${a.score >= 80 ? 'Excellent — you\'re close to job-ready!' : a.score >= 60 ? 'Good foundation. Close the remaining gaps to land your dream role.' : 'Clear roadmap ahead. Focus on critical gaps to accelerate your path.'} ${a.ghBoost > 0 ? `GitHub activity boosted your score by +${a.ghBoost} pts.` : ''}</div>
+        <div class="r-meta">${a.companies.map(c => `<span class="rmeta">${c}</span>`).join('')}</div>
+      </div>
+      <div class="r-time"><div class="rtn">${a.weeks}</div><div class="rtl">Weeks<br>to job-ready</div></div>
+    </div>
+    ${a.ghBoost > 0 ? `
+    <div class="gh-insight-card reveal rd1">
+      <div class="gi-hdr">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" style="color:var(--green)"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+        <div class="gi-title">GitHub Analysis</div>
+        <span class="mono-tag green-tag" style="font-size:10px">Repos scanned</span>
+        <div style="margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--muted2)">+${a.ghBoost} pts boost from coding activity</div>
+      </div>
+      <div class="gi-grid">
+        <div class="gi-item"><div class="gi-val" style="color:var(--green)">127</div><div class="gi-lbl">Total commits</div></div>
+        <div class="gi-item"><div class="gi-val" style="color:var(--blue)">5</div><div class="gi-lbl">Languages found</div></div>
+        <div class="gi-item"><div class="gi-val" style="color:var(--amber)">3</div><div class="gi-lbl">Frameworks found</div></div>
+      </div>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--muted2);line-height:1.8">Active commits detected. React, Express.js, and Fetch API frameworks found. Consistent activity over 4 months shows learning momentum employers value.</div>
+    </div>` : ''}
+    <div class="two-col">
+      <div class="rcard reveal">
+        <div class="rc-lbl">🔴 Critical Gaps</div>
+        ${a.gaps.length === 0 ? '<div style="font-family:var(--mono);font-size:12px;color:var(--green)">🎉 No critical gaps! You\'re well-prepared for this role.</div>' :
+          a.gaps.map(g => `<div class="gap-item"><div class="gap-top"><span class="gap-name">${g.name}</span><span class="gbadge ${g.level.toLowerCase()}">${g.level}</span></div><div style="font-family:var(--mono);font-size:11px;color:var(--muted2)">Not detected in your profile. Required for ${a.role}.</div></div>`).join('')}
+      </div>
+      <div class="rcard reveal rd1">
+        <div class="rc-lbl">✨ Your Strengths</div>
+        ${a.strengths.slice(0, 6).map(s => `<div class="str-item"><div class="str-top"><div class="str-dot"></div><div class="str-name">${s.name}</div><div class="str-src">${s.src === 'github' ? '📁 GitHub' : '✍ profile'}</div></div></div>`).join('')}
+      </div>
+    </div>
+    <div class="roadmap-card reveal">
+      <div class="rc-lbl">🗺️ Your Learning Roadmap</div>
+      <div class="phases-g">
+        <div class="phase"><div class="pd p1">P1</div><div class="pl">Phase 1</div><div class="pt">Foundation Sprint</div><div class="pw">8–10 weeks</div><ul class="ptasks"><li>Master the most critical missing skill</li><li>Set up professional Git workflow</li><li>Build your GitHub presence</li></ul></div>
+        <div class="phase"><div class="pd p2">P2</div><div class="pl">Phase 2</div><div class="pt">Core Development</div><div class="pw">8–10 weeks</div><ul class="ptasks"><li>Build intermediate skills for ${a.role}</li><li>Complete 2 resource-backed courses</li><li>Start first portfolio project</li></ul></div>
+        <div class="phase"><div class="pd p3">P3</div><div class="pl">Phase 3</div><div class="pt">Portfolio Sprint</div><div class="pw">${Math.max(4, a.weeks - 18)} weeks</div><ul class="ptasks"><li>Build 2–3 strong projects</li><li>Deploy & write quality READMEs</li><li>Begin applying &amp; networking</li></ul></div>
+      </div>
+    </div>
+    <div class="bottom-cols">
+      <div class="rcard reveal">
+        <div class="rc-lbl">🏗️ Project Ideas to Build</div>
+        ${a.proj.map(p => `<div class="proj-item"><div class="proj-title">${p.t}</div><div class="proj-desc">${p.d}</div><div class="proj-tags">${p.tags.map(t => `<span class="pt-tag">${t}</span>`).join('')}</div></div>`).join('')}
+      </div>
+      <div class="rcard reveal rd1">
+        <div class="rc-lbl">🔀 Alternative Career Paths</div>
+        ${a.alts.map(alt => `<div class="alt-item"><div class="alt-pct">${alt.pct}%</div><div><div class="alt-role">${alt.role}</div><div class="alt-sal">${alt.sal}</div><div class="alt-desc">${alt.desc}</div></div></div>`).join('')}
+      </div>
+    </div>
+    <div class="pdf-bar reveal">
+      <div class="pdf-l"><div class="pdf-icon">📄</div><div><div class="pdf-title">Export Full Career Analysis</div><div class="pdf-sub">Gap score · GitHub insights · Roadmap · Projects · Alternative paths</div></div></div>
+      <button class="pdf-btn" onclick="exportPDF()">⬇ Download PDF Report</button>
+    </div>`;
+
+  const cont = document.getElementById('results-content');
+  if (cont) {
+    cont.innerHTML = html;
+    // Trigger score ring after short delay
+    setTimeout(() => { const c = document.getElementById('res-circle'); if (c) c.style.strokeDashoffset = 239 - (a.score / 100) * 239; }, 600);
+    // Re-run reveal on new elements
+    const sv = document.getElementById('v-student');
+    const obs = new IntersectionObserver(entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }), { threshold: 0.08 });
+    cont.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+  }
+}
+
+function exportPDF() {
+  const btn = document.querySelector('.pdf-btn');
+  btn.textContent = '⏳ Preparing…'; btn.disabled = true;
+  scrollToId('sec-results');
+  setTimeout(() => { window.print(); btn.textContent = '⬇ Download PDF Report'; btn.disabled = false; }, 500);
+}
+
+// ═══════════════════════════════════════════════════════
+// ADMIN VIEW
+// ═══════════════════════════════════════════════════════
+let charts = {};
+function destroyCharts() { Object.values(charts).forEach(c => { try { c.destroy(); } catch { } }); charts = {}; }
+
+async function loadAdminView(admin) {
+  showView('v-admin');
+  document.getElementById('sb-uni-name').textContent = admin.uni || 'University Portal';
+  document.getElementById('sb-admin-name').textContent = admin.name || 'Admin';
+  document.getElementById('tb-updated').textContent = 'Updated: ' + new Date().toLocaleString('en-IN');
+  destroyCharts();
+
+  let students = [];
+  // Try Supabase
+  if (isConfigured() && sb) {
+    try {
+      const { data } = await sb.from('profiles').select('*').eq('role', 'student');
+      if (data && data.length > 0) {
+        students = data.map(d => ({
+          email: d.email, name: d.name,
+          profile: d.profile_data || { name: d.name, role: 'Unknown', skills: [], degree: '', year: '', cgpa: '', certs: '', projects: '' },
+          analysis: d.analysis, status: d.status || 'new'
+        }));
+      }
+    } catch(e) {}
+  }
+
+  // Merge with local students (demo + real local registrations)
+  const localStudents = (LS.get('students') || []).filter(s => s.profile?.name);
+  const merged = [...students];
+  localStudents.forEach(ls => { if (!merged.find(m => m.email === ls.email)) merged.push(ls); });
+  students = merged;
+
+  document.getElementById('stud-cnt').textContent = students.length;
+  renderKPIs(students);
+  renderAdminCharts(students);
+  renderStudentsTable(students);
+  renderTrends(students);
+  renderRoles(students);
+  renderRecentTable(students);
+}
+
+function renderKPIs(students) {
+  const scored = students.filter(s => s.analysis);
+  const avg = scored.length ? Math.round(scored.reduce((a, s) => a + s.analysis.score, 0) / scored.length) : 0;
+  const hired = students.filter(s => s.status === 'hired').length;
+  const gaps = scored.reduce((a, s) => a + (s.analysis.gaps || []).length, 0);
+  document.getElementById('kpi-grid').innerHTML = [
+    { cls: 'kp', lbl: 'Total Students', val: students.length, d: '<span class="up">↑ 3</span> this month' },
+    { cls: 'kg', lbl: 'Avg Gap Score', val: `${avg}<span style="font-size:16px;opacity:.5">/100</span>`, d: '<span class="up">↑ 2.4</span> vs last month' },
+    { cls: 'ka', lbl: 'Placed / Hired', val: hired, d: '<span class="up">↑ 1</span> this month' },
+    { cls: 'kr', lbl: 'Total Gaps Found', val: gaps, d: 'Across all analyses' },
+  ].map(k => `<div class="kpi ${k.cls}"><div class="kpi-lbl">${k.lbl}</div><div class="kpi-val">${k.val}</div><div class="kpi-d">${k.d}</div></div>`).join('');
+}
+
+const CO = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#5a5a7a', font: { family: 'DM Mono', size: 10 } }, grid: { color: 'rgba(255,255,255,.05)' } }, y: { ticks: { color: '#5a5a7a', font: { family: 'DM Mono', size: 10 } }, grid: { color: 'rgba(255,255,255,.05)' } } } };
+const CLRS = ['#7c5cfc', '#39ff8a', '#ffb547', '#ff4f6a', '#4fc3f7', '#ff9f7f'];
+
+function renderAdminCharts(students) {
+  if (charts.score) charts.score.destroy();
+  charts.score = new Chart(document.getElementById('scoreChart'), { type: 'line', data: { labels: ['Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'], datasets: [{ data: [52, 55, 58, 61, 64, 65, 68], borderColor: '#7c5cfc', backgroundColor: 'rgba(124,92,252,.12)', tension: .4, fill: true, pointBackgroundColor: '#7c5cfc', pointRadius: 4 }] }, options: { ...CO, responsive: true, maintainAspectRatio: false } });
+
+  const gf = {};
+  students.filter(s => s.analysis).forEach(s => (s.analysis.gaps || []).forEach(g => { gf[g.name] = (gf[g.name] || 0) + 1; }));
+  const gS = Object.entries(gf).sort((a, b) => b[1] - a[1]).slice(0, 7);
+  if (charts.gap) charts.gap.destroy();
+  charts.gap = new Chart(document.getElementById('gapChart'), { type: 'bar', data: { labels: gS.map(([k]) => k), datasets: [{ data: gS.map(([, v]) => v), backgroundColor: 'rgba(255,79,106,.7)', borderRadius: 6 }] }, options: { ...CO, indexAxis: 'y', responsive: true, maintainAspectRatio: false } });
+
+  const rf = {};
+  students.forEach(s => { const r = s.profile?.role || 'Unknown'; rf[r] = (rf[r] || 0) + 1; });
+  if (charts.role) charts.role.destroy();
+  charts.role = new Chart(document.getElementById('roleChart'), { type: 'doughnut', data: { labels: Object.keys(rf), datasets: [{ data: Object.values(rf), backgroundColor: CLRS, borderWidth: 0, hoverOffset: 6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'right', labels: { color: '#8888aa', font: { family: 'DM Mono', size: 9 }, padding: 10, boxWidth: 9 } } } } });
+
+  if (charts.tl) charts.tl.destroy();
+  charts.tl = new Chart(document.getElementById('trendLine'), { type: 'line', data: { labels: ['Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'], datasets: [{ label: 'Full Stack', data: [48, 52, 55, 58, 62, 64, 68], borderColor: '#7c5cfc', tension: .4, fill: false, pointRadius: 3 }, { label: 'Frontend', data: [55, 60, 65, 70, 74, 78, 82], borderColor: '#39ff8a', tension: .4, fill: false, pointRadius: 3 }, { label: 'Data Sci', data: [42, 46, 50, 54, 56, 60, 65], borderColor: '#ffb547', tension: .4, fill: false, pointRadius: 3 }] }, options: { ...CO, responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, labels: { color: '#8888aa', font: { family: 'DM Mono', size: 10 }, padding: 14, boxWidth: 10 } } } } });
+
+  const rkeys = Object.keys(rf);
+  if (charts.rp) charts.rp.destroy();
+  charts.rp = new Chart(document.getElementById('rolePie'), { type: 'doughnut', data: { labels: rkeys, datasets: [{ data: rkeys.map(r => rf[r]), backgroundColor: CLRS, borderWidth: 0, hoverOffset: 8 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'bottom', labels: { color: '#8888aa', font: { family: 'DM Mono', size: 10 }, padding: 12, boxWidth: 9 } } } } });
+
+  const avgScores = rkeys.map(r => { const sc = students.filter(s => s.profile?.role === r && s.analysis).map(s => s.analysis.score); return sc.length ? Math.round(sc.reduce((a, b) => a + b, 0) / sc.length) : 0; });
+  if (charts.rs) charts.rs.destroy();
+  charts.rs = new Chart(document.getElementById('roleScore'), { type: 'bar', data: { labels: rkeys.map(r => r.split(' ')[0]), datasets: [{ data: avgScores, backgroundColor: CLRS, borderRadius: 6 }] }, options: { ...CO, responsive: true, maintainAspectRatio: false } });
+
+  const avgTime = rkeys.map(r => { const wk = students.filter(s => s.profile?.role === r && s.analysis).map(s => s.analysis.weeks); return wk.length ? Math.round(wk.reduce((a, b) => a + b, 0) / wk.length) : 0; });
+  if (charts.rt) charts.rt.destroy();
+  charts.rt = new Chart(document.getElementById('roleTime'), { type: 'bar', data: { labels: rkeys, datasets: [{ data: avgTime, backgroundColor: 'rgba(79,195,247,.6)', borderRadius: 6 }] }, options: { ...CO, responsive: true, maintainAspectRatio: false } });
+}
+
+function renderRecentTable(students) {
+  document.getElementById('recent-tbody').innerHTML = students.slice(0, 5).map(s => `
+    <tr><td><div class="td-name">${s.profile?.name || s.name}</div><div class="td-m">${s.profile?.year || '—'}</div></td>
+    <td><div class="td-m" style="color:var(--purple-b)">${s.profile?.role || '—'}</div></td>
+    <td>${s.analysis ? `<span class="sp ${scoreClass(s.analysis.score)}">${s.analysis.score}</span>` : '<span class="td-m">—</span>'}</td>
+    <td><span class="sb-badge ${statusClass(s.status)}">${s.status || 'new'}</span></td></tr>`).join('');
+}
+
+let allStudents = [], curSearch = '', curRole = '', curScore = '';
+function renderStudentsTable(students) { allStudents = students; applyFilters(); }
+function filterStudents(q) { curSearch = q.toLowerCase(); applyFilters(); }
+function filterByRole(r) { curRole = r; applyFilters(); }
+function filterByScore(s) { curScore = s; applyFilters(); }
+function applyFilters() {
+  let d = allStudents;
+  if (curSearch) d = d.filter(s => (s.profile?.name || '').toLowerCase().includes(curSearch) || (s.profile?.role || '').toLowerCase().includes(curSearch) || (s.profile?.skills || []).join(' ').includes(curSearch));
+  if (curRole) d = d.filter(s => s.profile?.role === curRole);
+  if (curScore === 'hi') d = d.filter(s => s.analysis?.score >= 80);
+  else if (curScore === 'mid') d = d.filter(s => s.analysis?.score >= 50 && s.analysis?.score < 80);
+  else if (curScore === 'lo') d = d.filter(s => s.analysis?.score < 50);
+  document.getElementById('stud-tbody').innerHTML = d.map(s => `
+    <tr onclick="openDM(${allStudents.indexOf(s)})">
+      <td><div class="td-name">${s.profile?.name || s.name}</div><div class="td-m">${s.email}</div></td>
+      <td><div class="td-m" style="color:var(--purple-b)">${s.profile?.role || '—'}</div></td>
+      <td><div class="td-m">${s.profile?.year || '—'}</div></td>
+      <td><div class="td-m">${s.profile?.cgpa || '—'}</div></td>
+      <td>${s.analysis ? `<span class="sp ${scoreClass(s.analysis.score)}">${s.analysis.score}/100</span>` : '<span class="td-m">No analysis</span>'}</td>
+      <td>${s.analysis?.gaps?.[0] ? `<span class="gbadge ${s.analysis.gaps[0].level.toLowerCase()}">${s.analysis.gaps[0].name}</span>` : '<span class="td-m">—</span>'}</td>
+      <td><span class="sb-badge ${statusClass(s.status)}">${s.status || 'new'}</span></td>
+      <td onclick="event.stopPropagation()"><button class="act-btn" onclick="openDM(${allStudents.indexOf(s)})">View →</button></td>
+    </tr>`).join('');
+}
+function scoreClass(s) { return s >= 80 ? 'sp-hi' : s >= 50 ? 'sp-mid' : 'sp-lo'; }
+function statusClass(s) { return s === 'hired' ? 'sb-hired' : s === 'new' ? 'sb-new' : 'sb-active'; }
+
+function renderTrends(students) {
+  const gf = {}, sf = {}, n = students.length || 1;
+  students.forEach(s => {
+    (s.analysis?.gaps || []).forEach(g => { gf[g.name] = (gf[g.name] || 0) + 1; });
+    (s.profile?.skills || []).forEach(g => { sf[g] = (sf[g] || 0) + 1; });
+  });
+  const gSorted = Object.entries(gf).sort((a, b) => b[1] - a[1]).slice(0, 7);
+  const sSorted = Object.entries(sf).sort((a, b) => b[1] - a[1]).slice(0, 7);
+  const colors = ['#ff4f6a', '#ff4f6a', '#ffb547', '#ffb547', '#9b7dff', '#9b7dff', '#4fc3f7'];
+  document.getElementById('gap-trend-list').innerHTML = gSorted.map(([nm, cnt], i) => { const p = Math.round(cnt / n * 100); return `<div><div class="trend-item-top"><span class="trend-name">${nm}</span><span class="trend-pct">${p}% · ${cnt} students</span></div><div class="trend-bar"><div class="trend-fill" style="width:${p}%;background:${colors[i]}"></div></div></div>`; }).join('');
+  document.getElementById('str-trend-list').innerHTML = sSorted.map(([nm, cnt]) => { const p = Math.round(cnt / n * 100); return `<div><div class="trend-item-top"><span class="trend-name">${nm}</span><span class="trend-pct">${p}%</span></div><div class="trend-bar"><div class="trend-fill" style="width:${p}%;background:var(--green)"></div></div></div>`; }).join('');
+}
+
+function renderRoles(students) {
+  const rf = {}; students.forEach(s => { const r = s.profile?.role || 'Unknown'; rf[r] = (rf[r] || 0) + 1; });
+  const n = students.length || 1;
+  document.getElementById('role-list').innerHTML = Object.entries(rf).sort((a, b) => b[1] - a[1]).map(([r, cnt]) => { const p = Math.round(cnt / n * 100); return `<div><div class="role-item-top"><span class="role-nm">${r}</span><span class="role-cnt">${cnt} · ${p}%</span></div><div class="role-bar"><div class="role-fill" style="width:${p}%"></div></div></div>`; }).join('');
+}
+
+function showAdmPage(id, el) {
+  document.querySelectorAll('.adm-page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('ap-' + id).classList.add('active');
+  if (el) el.classList.add('active');
+}
+
+function openDM(idx) {
+  const s = allStudents[idx]; if (!s) return;
+  const a = s.analysis;
+  document.getElementById('dm-modal').innerHTML = `
+    <div class="dm-hero">
+      <div class="dm-close" onclick="document.getElementById('dm-overlay').classList.remove('open')">✕</div>
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
+        <div style="width:46px;height:46px;border-radius:50%;background:var(--purple-dim);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;color:var(--purple-b);flex-shrink:0">${(s.profile?.name || s.name)[0]}</div>
+        <div><div style="font-size:20px;font-weight:800;letter-spacing:-.03em">${s.profile?.name || s.name}</div>
+        <div style="font-family:var(--mono);font-size:11px;color:var(--muted2);display:flex;gap:14px;margin-top:3px;flex-wrap:wrap">
+          <span>🎓 ${s.profile?.degree || '—'}</span><span>📅 ${s.profile?.year || '—'}</span>
+          <span>⭐ ${s.profile?.cgpa || '—'} CGPA</span><span>📧 ${s.email}</span>
+        </div></div>
+        ${a ? `<div style="margin-left:auto;text-align:right"><div style="font-size:32px;font-weight:800;color:${a.score >= 80 ? 'var(--green)' : a.score >= 50 ? 'var(--amber)' : 'var(--red)'}">${a.score}</div><div style="font-family:var(--mono);font-size:9px;color:var(--muted2);letter-spacing:.08em">GAP SCORE</div></div>` : ''}
+      </div>
+      <div style="display:flex;gap:9px;flex-wrap:wrap">
+        <span class="sb-badge ${statusClass(s.status)}">${s.status || 'new'}</span>
+        <span style="font-family:var(--mono);font-size:11px;padding:4px 11px;border-radius:100px;background:rgba(255,255,255,.05);color:var(--muted2)">🎯 ${s.profile?.role || '—'}</span>
+        ${a ? `<span style="font-family:var(--mono);font-size:11px;padding:4px 11px;border-radius:100px;background:rgba(255,181,71,.1);color:var(--amber)">⏱ ${a.weeks}w to job-ready</span>` : ''}
+      </div>
+    </div>
+    <div class="dm-body">
+      ${!a ? '<div class="alert-info">⚠️ This student has not run their analysis yet.</div>' : `
+      <div class="dm-2">
+        <div class="dm-card"><div style="font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:14px">🔴 Critical Gaps</div>
+          ${(a.gaps || []).map(g => `<div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:700">${g.name}</span><span class="gbadge ${g.level.toLowerCase()}">${g.level}</span></div>`).join('')}</div>
+        <div class="dm-card"><div style="font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:14px">✨ Strengths</div>
+          ${(a.strengths || []).map(s => `<div style="padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px"><div style="width:5px;height:5px;border-radius:50%;background:var(--green)"></div>${typeof s === 'string' ? s : s.name}</div>`).join('')}</div>
+      </div>`}
+      <div style="font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">🏗️ Projects</div>
+      <div style="font-family:var(--mono);font-size:12px;color:var(--muted2);background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:9px;padding:13px 15px;line-height:1.75;margin-bottom:18px">${s.profile?.projects || 'No projects listed yet.'}</div>
+      <div style="font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">🔗 Skills</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">${(s.profile?.skills || []).map(sk => `<span style="font-family:var(--mono);font-size:11px;padding:4px 11px;border-radius:100px;background:var(--purple-dim);border:1px solid rgba(124,92,252,.28);color:var(--purple-b)">${sk}</span>`).join('') || '<span style="font-family:var(--mono);font-size:12px;color:var(--muted2)">None listed</span>'}</div>
+    </div>`;
+  document.getElementById('dm-overlay').classList.add('open');
+}
+function closeDM(e) { if (e.target === document.getElementById('dm-overlay')) document.getElementById('dm-overlay').classList.remove('open'); }
+
+function exportCSV() {
+  const students = allStudents.length ? allStudents : (LS.get('students') || []);
+  const hdr = ['Name', 'Email', 'Degree', 'Year', 'CGPA', 'Target Role', 'Gap Score', 'Status', 'Weeks to Ready', 'Top Gap', 'Skills', 'Certs'];
+  const rows = students.map(s => [s.profile?.name || s.name, s.email, s.profile?.degree || '', s.profile?.year || '', s.profile?.cgpa || '', s.profile?.role || '', s.analysis?.score || '', s.status || 'new', s.analysis?.weeks || '', s.analysis?.gaps?.[0]?.name || 'none', (s.profile?.skills || []).join('; '), s.profile?.certs || 'none']);
+  const csv = [hdr, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'gapsync-students.csv'; a.click();
+}
+
+// ═══════════════════════════════════════════════════════
+// CUSTOM CURSOR
+// ═══════════════════════════════════════════════════════
+const cur = document.getElementById('cursor');
+const ring = document.getElementById('cursor-ring');
+let rx = 0, ry = 0, cx = 0, cy = 0;
+document.addEventListener('mousemove', e => { cx = e.clientX; cy = e.clientY; cur.style.left = cx + 'px'; cur.style.top = cy + 'px'; });
+function animateRing() {
+  rx += (cx - rx) * 0.1; ry += (cy - ry) * 0.1;
+  ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
+  requestAnimationFrame(animateRing);
+}
+animateRing();
+document.querySelectorAll('a,button,.role-card,.sb-item,.kpi,.phase,.proj-item,.str-item').forEach(el => {
+  el.addEventListener('mouseenter', () => { cur.style.width = '20px'; cur.style.height = '20px'; ring.style.width = '52px'; ring.style.height = '52px'; ring.style.borderColor = 'rgba(124,92,252,.7)'; });
+  el.addEventListener('mouseleave', () => { cur.style.width = '12px'; cur.style.height = '12px'; ring.style.width = '36px'; ring.style.height = '36px'; ring.style.borderColor = 'rgba(124,92,252,.4)'; });
+});
+
+// ═══════════════════════════════════════════════════════
+// LANDING PAGE SCROLL PROGRESS
+// ═══════════════════════════════════════════════════════
+window.addEventListener('scroll', () => {
+  const prog = document.getElementById('scroll-progress');
+  const total = document.documentElement.scrollHeight - window.innerHeight;
+  if (total > 0) prog.style.width = (window.scrollY / total * 100) + '%';
+});
+
+// ═══════════════════════════════════════════════════════
+// REVEAL FOR LANDING
+// ═══════════════════════════════════════════════════════
+const globalObs = new IntersectionObserver(entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }), { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(el => globalObs.observe(el));
+
+// ═══════════════════════════════════════════════════════
+// SUPABASE SETUP INSTRUCTIONS (shown if not configured)
+// ═══════════════════════════════════════════════════════
+if (!isConfigured()) {
+  console.log(`
+╔══════════════════════════════════════════════════════════╗
+║          GAPSYNC — SUPABASE SETUP INSTRUCTIONS           ║
+╠══════════════════════════════════════════════════════════╣
+║  1. Go to https://supabase.com → New Project             ║
+║  2. Copy your Project URL + anon key                     ║
+║  3. Replace in this file:                                ║
+║     SUPABASE_URL = 'https://xxxxx.supabase.co'           ║
+║     SUPABASE_ANON_KEY = 'eyJ...'                         ║
+║  4. In Supabase SQL Editor, run:                         ║
+║                                                          ║
+║  CREATE TABLE profiles (                                 ║
+║    id uuid PRIMARY KEY REFERENCES auth.users,            ║
+║    email text, name text, role text,                     ║
+║    university text, status text DEFAULT 'new',           ║
+║    profile_data jsonb, analysis jsonb,                   ║
+║    created_at timestamptz DEFAULT now(),                  ║
+║    updated_at timestamptz DEFAULT now()                   ║
+║  );                                                      ║
+║  ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;         ║
+║  CREATE POLICY "Users manage own profile"                ║
+║    ON profiles FOR ALL                                   ║
+║    USING (auth.uid() = id);                              ║
+║  CREATE POLICY "Admins read all"                         ║
+║    ON profiles FOR SELECT                                ║
+║    USING (true);                                         ║
+║                                                          ║
+║  Running in localStorage fallback mode for now.          ║
+╚══════════════════════════════════════════════════════════╝
+  `);
+}
+
+// ═══════════════════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════════════════
+seedDemoData();
+const sess = getSession();
+if (sess) {
+  if (sess.type === 'student') {
+    const students = LS.get('students') || [];
+    const u = students.find(s => s.email === sess.email) || { email: sess.email, name: sess.name, profile: null, analysis: null };
+    loadStudentView(u);
+  } else if (sess.type === 'admin') {
+    const admins = LS.get('admins') || [];
+    const a = admins.find(ad => ad.email === sess.email) || { email: sess.email, name: sess.name || 'Admin', uni: sess.uni || 'University' };
+    loadAdminView(a);
+  }
+}
+</script>
+</body>
+</html> 
