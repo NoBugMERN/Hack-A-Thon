@@ -575,16 +575,16 @@ tbody tr:hover{background:rgba(255,255,255,.04)}
         <div class="mtab" onclick="switchTab('student','register')">Register</div>
       </div>
       <div class="form-pane active" id="s-login-pane">
-        <div class="field"><label>University Email</label><input type="email" id="s-email" placeholder="you@university.edu" autocomplete="email"></div>
-        <div class="field"><label>Password</label><input type="password" id="s-pass" placeholder="••••••••"></div>
+        <div class="field"><label>University Email</label><input type="email" id="s-email" placeholder="you@university.edu" autocomplete="off"></div>
+        <div class="field"><label>Password</label><input type="password" id="s-pass" placeholder="••••••••" autocomplete="new-password"></div>
         <div class="err-box" id="s-err">Incorrect credentials. Check email/password.</div>
         <button class="btn btn-green btn-full" onclick="loginStudent()">Sign in &amp; Analyze →</button>
         <div id="s-db-status" class="db-status" style="display:none"></div>
       </div>
       <div class="form-pane" id="s-register-pane">
-        <div class="field"><label>Full Name</label><input type="text" id="s-reg-name" placeholder="Your full name"></div>
-        <div class="field"><label>University Email</label><input type="email" id="s-reg-email" placeholder="you@university.edu"></div>
-        <div class="field"><label>Password (min 6 chars)</label><input type="password" id="s-reg-pass" placeholder="Create a password"></div>
+        <div class="field"><label>Full Name</label><input type="text" id="s-reg-name" placeholder="Your full name" autocomplete="off"></div>
+        <div class="field"><label>University Email</label><input type="email" id="s-reg-email" placeholder="you@university.edu" autocomplete="off"></div>
+        <div class="field"><label>Password (min 6 chars)</label><input type="password" id="s-reg-pass" placeholder="Create a password" autocomplete="new-password"></div>
         <div class="err-box" id="s-reg-err">Please fill all fields correctly.</div>
         <button class="btn btn-green btn-full" onclick="registerStudent()">Create Account →</button>
         <div id="s-reg-db-status" class="db-status" style="display:none"></div>
@@ -609,21 +609,47 @@ tbody tr:hover{background:rgba(255,255,255,.04)}
         <div class="mtab" onclick="switchTab('admin','register')">Register University</div>
       </div>
       <div class="form-pane active" id="a-login-pane">
-        <div class="field"><label>Admin Email</label><input type="email" id="a-email" placeholder="admin@university.edu"></div>
-        <div class="field"><label>Password</label><input type="password" id="a-pass" placeholder="••••••••"></div>
+        <div class="field"><label>Admin Email</label><input type="email" id="a-email" placeholder="admin@university.edu" autocomplete="off"></div>
+        <div class="field"><label>Password</label><input type="password" id="a-pass" placeholder="••••••••" autocomplete="new-password"></div>
         <div class="err-box" id="a-err">Incorrect credentials.</div>
         <button class="btn btn-primary btn-full" onclick="loginAdmin()">Access Dashboard →</button>
         <div id="a-db-status" class="db-status" style="display:none"></div>
       </div>
       <div class="form-pane" id="a-register-pane">
-        <div class="field"><label>University Name</label><input type="text" id="a-reg-uni" placeholder="e.g. MIT World Peace University"></div>
-        <div class="field"><label>Admin Email</label><input type="email" id="a-reg-email" placeholder="admin@university.edu"></div>
-        <div class="field"><label>Password</label><input type="password" id="a-reg-pass" placeholder="Create a strong password"></div>
+        <div class="field"><label>University Name</label><input type="text" id="a-reg-uni" placeholder="e.g. MIT World Peace University" autocomplete="off"></div>
+        <div class="field"><label>Admin Email</label><input type="email" id="a-reg-email" placeholder="admin@university.edu" autocomplete="off"></div>
+        <div class="field"><label>Password</label><input type="password" id="a-reg-pass" placeholder="Create a strong password" autocomplete="new-password"></div>
         <div class="err-box" id="a-reg-err">Please fill all fields.</div>
         <button class="btn btn-primary btn-full" onclick="registerAdmin()">Register University →</button>
       </div>
       <div class="modal-divider"></div>
       <div class="modal-switch" onclick="closeModal('admin');openModal('student')">Student? Sign in here →</div>
+    </div>
+  </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- GUIDANCE MODAL -->
+<div class="modal-overlay" id="modal-guidance" onclick="handleOvClick(event,'guidance')">
+  <div class="modal">
+    <div class="modal-stripe a"></div>
+    <button class="modal-close" onclick="closeModal('guidance')">✕</button>
+    <div class="modal-body">
+      <div class="modal-icon a">💬</div>
+      <div class="modal-title">Share Your Guidance</div>
+      <div class="modal-sub">Already working in industry? Share real-world advice for students following this roadmap.</div>
+      <div class="field"><label>Your Name</label><input type="text" id="g-name" placeholder="e.g. Aisha Khan" autocomplete="off"></div>
+      <div class="field"><label>Email</label><input type="email" id="g-email" placeholder="you@company.com" autocomplete="off"></div>
+      <div class="field"><label>Current Role</label><input type="text" id="g-role" placeholder="e.g. Backend Engineer @ SaaS startup" autocomplete="off"></div>
+      <div class="field"><label>Years of Experience</label><input type="number" id="g-exp" placeholder="e.g. 3" min="0" autocomplete="off"></div>
+      <div class="field"><label>Company (optional)</label><input type="text" id="g-company" placeholder="e.g. Microsoft, Swiggy, Razorpay" autocomplete="off"></div>
+      <div class="field"><label>Your advice for freshers</label><textarea id="g-advice" placeholder="What do you wish someone told you in 2–5 lines?"></textarea></div>
+      <div class="err-box" id="g-err">Please fill in name, email, role and your advice.</div>
+      <button class="btn btn-primary btn-full" onclick="submitGuidance()">Share guidance →</button>
+      <div id="g-db-status" class="db-status" style="display:none"></div>
+      <div class="modal-hint">Your guidance may be shown (with your name/role) in the admin dashboard so universities can see real alumni &amp; expert input.</div>
     </div>
   </div>
 </div>
@@ -811,6 +837,28 @@ tbody tr:hover{background:rgba(255,255,255,.04)}
           <div class="panel"><div class="panel-hdr"><div><div class="panel-title">Recent Activity</div></div></div><div style="overflow-x:auto"><table><thead><tr><th>Student</th><th>Role</th><th>Score</th><th>Status</th></tr></thead><tbody id="recent-tbody"></tbody></table></div></div>
           <div class="panel"><div class="panel-hdr"><div><div class="panel-title">Role Split</div></div></div><div class="panel-body"><div class="chart-w"><canvas id="roleChart"></canvas></div></div></div>
         </div>
+        <div class="panel">
+          <div class="panel-hdr">
+            <div>
+              <div class="panel-title">Alumni &amp; Expert Guidance</div>
+              <div class="panel-sub">Real advice flowing in from your ecosystem</div>
+            </div>
+          </div>
+          <div style="overflow-x:auto">
+            <table>
+              <thead>
+                <tr>
+                  <th>From</th>
+                  <th>Role &amp; Company</th>
+                  <th>Experience</th>
+                  <th>Advice</th>
+                  <th>Submitted</th>
+                </tr>
+              </thead>
+              <tbody id="guidance-tbody"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
     <div class="adm-page" id="ap-students">
@@ -933,7 +981,14 @@ function showView(id) {
 // ═══════════════════════════════════════════════════════
 function openModal(t) {
   document.getElementById('modal-' + t).classList.add('open');
-  setTimeout(() => document.getElementById(t === 'student' ? 's-email' : 'a-email')?.focus(), 300);
+  const focusId = t === 'student'
+    ? 's-email'
+    : t === 'admin'
+      ? 'a-email'
+      : t === 'guidance'
+        ? 'g-name'
+        : null;
+  if (focusId) setTimeout(() => document.getElementById(focusId)?.focus(), 300);
 }
 function closeModal(t) { document.getElementById('modal-' + t).classList.remove('open'); }
 function handleOvClick(e, t) { if (e.target === document.getElementById('modal-' + t)) closeModal(t); }
@@ -1092,6 +1147,67 @@ async function signOut() {
   clearSession();
   destroyCharts();
   showView('v-landing');
+}
+
+async function submitGuidance() {
+  const name = document.getElementById('g-name').value.trim();
+  const email = document.getElementById('g-email').value.trim().toLowerCase();
+  const role = document.getElementById('g-role').value.trim();
+  const expStr = document.getElementById('g-exp').value.trim();
+  const company = document.getElementById('g-company').value.trim();
+  const advice = document.getElementById('g-advice').value.trim();
+  const err = document.getElementById('g-err');
+
+  err.style.display = 'none';
+
+  if (!name || !email || !role || !advice) {
+    err.textContent = 'Please fill in name, email, current role and your advice.';
+    err.style.display = 'block';
+    setTimeout(() => err.style.display = 'none', 4000);
+    return;
+  }
+
+  const experience_years = expStr ? parseInt(expStr, 10) : null;
+  const payload = {
+    name,
+    email,
+    role,
+    experience_years: isNaN(experience_years) ? null : experience_years,
+    company: company || null,
+    advice,
+    created_at: new Date().toISOString()
+  };
+
+  let savedToSupabase = false;
+
+  if (isConfigured() && sb) {
+    dbStatus('g-db-status', '⏳ Saving to Supabase…', true);
+    try {
+      const { error } = await sb.from('guidance').insert(payload);
+      if (error) throw error;
+      savedToSupabase = true;
+      dbStatus('g-db-status', '✅ Guidance saved to Supabase', true);
+    } catch(e) {
+      dbStatus('g-db-status', '⚠️ Supabase error — saved locally instead', false);
+    }
+  }
+
+  if (!savedToSupabase) {
+    const local = LS.get('guidance') || [];
+    local.unshift(payload);
+    LS.set('guidance', local);
+  }
+
+  // Clear fields after successful submission
+  document.getElementById('g-name').value = '';
+  document.getElementById('g-email').value = '';
+  document.getElementById('g-role').value = '';
+  document.getElementById('g-exp').value = '';
+  document.getElementById('g-company').value = '';
+  document.getElementById('g-advice').value = '';
+
+  // Small success hint
+  dbStatus('g-db-status', '✅ Thank you! Your guidance has been submitted.', true);
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1821,6 +1937,14 @@ function renderResults(a) {
         <div class="phase"><div class="pd p2">P2</div><div class="pl">Phase 2</div><div class="pt">Core Development</div><div class="pw">8–10 weeks</div><ul class="ptasks"><li>Build intermediate skills for ${a.role}</li><li>Complete 2 resource-backed courses</li><li>Start first portfolio project</li></ul></div>
         <div class="phase"><div class="pd p3">P3</div><div class="pl">Phase 3</div><div class="pt">Portfolio Sprint</div><div class="pw">${Math.max(4, a.weeks - 18)} weeks</div><ul class="ptasks"><li>Build 2–3 strong projects</li><li>Deploy & write quality READMEs</li><li>Begin applying &amp; networking</li></ul></div>
       </div>
+      <div class="panel-divider" style="height:1px;background:var(--border);margin:18px 0"></div>
+      <div>
+        <div class="rc-lbl" style="margin-bottom:6px">💬 Alumni &amp; Expert Guidance</div>
+        <div style="font-family:var(--mono);font-size:11px;color:var(--muted2);margin-bottom:12px">
+          Already working in this role? Share 2–3 lines of honest guidance so freshers following this roadmap know what really matters.
+        </div>
+        <button class="btn btn-ghost" onclick="openModal('guidance')">Share your advice</button>
+      </div>
     </div>
     <div class="bottom-cols">
       <div class="rcard reveal">
@@ -1897,6 +2021,10 @@ async function loadAdminView(admin) {
   renderTrends(students);
   renderRoles(students);
   renderRecentTable(students);
+
+  // Load guidance submissions for overview
+  const guidance = await fetchGuidance();
+  renderGuidanceTable(guidance);
 }
 
 function renderKPIs(students) {
@@ -1998,6 +2126,66 @@ function renderRoles(students) {
   const rf = {}; students.forEach(s => { const r = s.profile?.role || 'Unknown'; rf[r] = (rf[r] || 0) + 1; });
   const n = students.length || 1;
   document.getElementById('role-list').innerHTML = Object.entries(rf).sort((a, b) => b[1] - a[1]).map(([r, cnt]) => { const p = Math.round(cnt / n * 100); return `<div><div class="role-item-top"><span class="role-nm">${r}</span><span class="role-cnt">${cnt} · ${p}%</span></div><div class="role-bar"><div class="role-fill" style="width:${p}%"></div></div></div>`; }).join('');
+}
+
+async function fetchGuidance() {
+  let guidance = [];
+  if (isConfigured() && sb) {
+    try {
+      const { data, error } = await sb
+        .from('guidance')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(30);
+      if (error) throw error;
+      if (data && data.length) guidance = data;
+    } catch(e) {
+      // fall back to local-only mode
+    }
+  }
+
+  const local = LS.get('guidance') || [];
+  const merged = [...guidance];
+  local.forEach(l => {
+    if (!merged.find(m =>
+      m.email === l.email &&
+      m.advice === l.advice &&
+      (m.created_at || m.createdAt) === (l.created_at || l.createdAt)
+    )) {
+      merged.push(l);
+    }
+  });
+
+  merged.sort((a, b) => {
+    const da = new Date(a.created_at || a.createdAt || 0).getTime();
+    const db = new Date(b.created_at || b.createdAt || 0).getTime();
+    return db - da;
+  });
+
+  return merged;
+}
+
+function renderGuidanceTable(items) {
+  const tbody = document.getElementById('guidance-tbody');
+  if (!tbody) return;
+  if (!items || !items.length) {
+    tbody.innerHTML = `<tr><td colspan="5" class="td-m">No guidance submissions yet.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = items.map(g => {
+    const roleCompany = [g.role, g.company].filter(Boolean).join(' · ');
+    const exp = g.experience_years != null ? `${g.experience_years} yrs` : '—';
+    const ts = g.created_at || g.createdAt;
+    const when = ts ? new Date(ts).toLocaleString('en-IN') : '—';
+    const adviceSnippet = (g.advice || '').length > 140 ? (g.advice.slice(0, 137) + '…') : (g.advice || '');
+    return `<tr>
+      <td><div class="td-name">${g.name || '—'}</div><div class="td-m">${g.email || ''}</div></td>
+      <td><div class="td-m" style="color:var(--purple-b)">${roleCompany || '—'}</div></td>
+      <td><span class="td-m">${exp}</span></td>
+      <td><div class="td-m" style="max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${adviceSnippet || '—'}</div></td>
+      <td><div class="td-m">${when}</div></td>
+    </tr>`;
+  }).join('');
 }
 
 function showAdmPage(id, el) {
